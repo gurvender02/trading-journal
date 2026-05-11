@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed Insights - Trading Journal</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* ══════════════════════════════════
+           DETAILED INSIGHTS PAGE
+        ══════════════════════════════════ */
+        @keyframes fadeUp   { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes resultIn { from { opacity:0; transform:translateY(8px);  } to { opacity:1; transform:translateY(0); } }
+        @keyframes spin     { to { transform: rotate(360deg); } }
+
+        .di-wrap {
+            max-width: 1060px;
+            margin: 0 auto;
+            padding: 32px 24px 60px;
+        }
+
+        /* ── PAGE HEADER ── */
+        .di-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+            animation: fadeUp .4s ease both;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+        .di-eyebrow {
+            display: flex; align-items: center; gap: 6px;
+            font-family: var(--font-mono); font-size: 10px;
+            letter-spacing: 3px; color: var(--gold);
+            text-transform: uppercase; margin-bottom: 6px;
+        }
+        .di-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+        .di-header-sub { font-size: 11px; color: var(--muted); font-family: var(--font-mono); margin-top: 4px; }
+        .di-header-right { display: flex; gap: 10px; padding-top: 8px; }
+
+        /* ── SECTION LABEL ── */
+        .sec-lbl {
+            display: flex; align-items: center; gap: 10px;
+            font-family: var(--font-mono); font-size: 9px;
+            letter-spacing: .18em; text-transform: uppercase;
+            color: var(--dim); margin-bottom: 14px;
+        }
+        .sec-lbl::after { content: ''; flex:1; height:1px; background: var(--border); }
+
+        /* ── QUESTION GROUPS ── */
+        .q-groups {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0,1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+            animation: fadeUp .45s ease both;
+            animation-delay: .05s;
+        }
+        .q-group-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: border-color .15s, transform .15s;
+        }
+        .q-group-card:hover { border-color: var(--border-bright); transform: translateY(-1px); }
+        .q-group-card.active { border-color: var(--gold); background: rgba(201,168,76,.05); }
+        .q-group-icon {
+            font-size: 16px; margin-bottom: 8px;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .q-group-title { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+        .q-group-count { font-family: var(--font-mono); font-size: 9px; color: var(--dim); }
+
+        /* ── QUESTION LIST ── */
+        .q-list-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 6px;
+            margin-bottom: 24px;
+            animation: fadeUp .45s ease both;
+            animation-delay: .1s;
+        }
+        .q-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 13px 16px; border-radius: 9px;
+            cursor: pointer; transition: background .12s;
+            border: 1px solid transparent;
+        }
+        .q-item:hover { background: var(--bg-hover); }
+        .q-item.selected {
+            background: rgba(201,168,76,.08);
+            border-color: rgba(201,168,76,.2);
+        }
+        .q-item-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--dim); flex-shrink: 0;
+            transition: background .15s;
+        }
+        .q-item.selected .q-item-dot { background: var(--gold); }
+        .q-item-text {
+            font-size: 13px; color: var(--muted);
+            line-height: 1.4; flex: 1;
+            transition: color .12s;
+        }
+        .q-item:hover .q-item-text,
+        .q-item.selected .q-item-text { color: var(--text); }
+        .q-item-arrow {
+            font-family: var(--font-mono); font-size: 10px;
+            color: var(--dim); flex-shrink: 0;
+            transition: color .12s;
+        }
+        .q-item.selected .q-item-arrow { color: var(--gold); }
+
+        /* ── RESULT PANEL ── */
+        .result-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            display: none;
+            animation: resultIn .3s ease both;
+        }
+        .result-panel.visible { display: block; }
+        .result-panel-hdr {
+            background: var(--bg-hover);
+            border-bottom: 1px solid var(--border-bright);
+            padding: 18px 22px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .result-q-text {
+            font-size: 13px; color: var(--text); font-weight: 600; flex: 1; line-height: 1.4;
+        }
+        .result-panel-body { padding: 22px; }
+
+        /* ── LOADING STATE ── */
+        .loading-state {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 14px;
+            padding: 48px 20px;
+        }
+        .loading-spinner {
+            width: 28px; height: 28px;
+            border: 2px solid var(--border);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        .loading-text { font-family: var(--font-mono); font-size: 11px; color: var(--dim); letter-spacing: .1em; }
+
+        /* ── ERROR STATE ── */
+        .error-state {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,69,96,.08);
+            border: 1px solid rgba(255,69,96,.2);
+            border-radius: 9px; padding: 14px 16px;
+            font-size: 13px; color: var(--red);
+        }
+
+        /* ── NO DATA STATE ── */
+        .nodata-state {
+            text-align: center; padding: 48px 20px;
+            color: var(--muted); font-size: 13px; line-height: 1.7;
+        }
+        .nodata-icon { font-size: 28px; opacity: .3; margin-bottom: 12px; }
+
+        /* ── STAT BOXES ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px 18px;
+            transition: border-color .15s;
+        }
+        .stat-box:hover { border-color: var(--border-bright); }
+        .stat-box.pos { border-left: 2px solid var(--green); }
+        .stat-box.neg { border-left: 2px solid var(--red);   }
+        .stat-box.neu { border-left: 2px solid var(--gold);  }
+        .stat-lbl { font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-bottom: 8px; }
+        .stat-val { font-family: var(--font-mono); font-size: 24px; font-weight: 500; }
+        .stat-val.pos { color: var(--green); }
+        .stat-val.neg { color: var(--red);   }
+        .stat-val.neu { color: var(--gold);  }
+
+        /* ── CHART ── */
+        .chart-wrap {
+            position: relative;
+            height: 320px;
+            margin-bottom: 20px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        /* ── RESULT TABLE ── */
+        .res-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+        .res-table { width: 100%; border-collapse: collapse; }
+        .res-table thead { background: var(--bg-hover); }
+        .res-table th {
+            padding: 11px 14px; text-align: left;
+            font-family: var(--font-mono); font-size: 9px;
+            letter-spacing: .14em; text-transform: uppercase; color: var(--dim);
+            border-bottom: 1px solid var(--border-bright);
+            white-space: nowrap;
+        }
+        .res-table td {
+            padding: 12px 14px; font-size: 12px;
+            font-family: var(--font-mono); color: var(--text);
+            border-bottom: 1px solid var(--border);
+        }
+        .res-table tbody tr:last-child td { border-bottom: none; }
+        .res-table tbody tr:hover { background: var(--bg-hover); }
+        .res-table td.num { text-align: right; }
+        .res-table td.pos { color: var(--green); }
+        .res-table td.neg { color: var(--red);   }
+
+        /* ── CATEGORY BADGE ── */
+        .cat-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(201,168,76,.1);
+            border: 1px solid rgba(201,168,76,.2);
+            border-radius: 5px; padding: 3px 9px;
+            font-family: var(--font-mono); font-size: 9px;
+            letter-spacing: .1em; text-transform: uppercase; color: var(--gold);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 760px) {
+            .q-groups { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 500px) {
+            .q-groups { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav>
+        <div class="brand">
+            <div class="brand-dot"></div>
+            TRADING JOURNAL
+        </div>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/add-trade">Add Trade</a></li>
+            <li><a href="/trades">My Trades</a></li>
+            <li><a href="/insights" class="active">Insights</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li style="margin-left:auto;">
+                <div class="theme-toggle-wrap">
+                    <span class="theme-label" id="themeLabel">DARK</span>
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+                        <div class="theme-thumb" id="themeThumb"></div>
+                    </button>
+                </div>
+            </li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="di-wrap">
+
+        <!-- PAGE HEADER -->
+        <div class="di-header">
+            <div>
+                <div class="di-eyebrow">
+                    <i data-lucide="search" style="width:12px;height:12px;"></i>
+                    Detailed Analysis
+                </div>
+                <h1>Advanced Insights</h1>
+                <div class="di-header-sub">Select a question to deep-dive your trading data</div>
+            </div>
+            <div class="di-header-right">
+                <a href="/insights" class="btn btn-ghost">← Summary Insights</a>
+            </div>
+        </div>
+
+        <!-- CATEGORY CARDS -->
+        <div class="sec-lbl">Choose a category</div>
+        <div class="q-groups" id="qGroups">
+            <div class="q-group-card active" onclick="showGroup('discipline')" id="gc-discipline">
+                <div class="q-group-icon" style="background:rgba(201,168,76,.12);">📋</div>
+                <div class="q-group-title">Discipline & Plan</div>
+                <div class="q-group-count">5 questions</div>
+            </div>
+            <div class="q-group-card" onclick="showGroup('strategy')" id="gc-strategy">
+                <div class="q-group-icon" style="background:rgba(0,212,170,.12);">📊</div>
+                <div class="q-group-title">Strategy</div>
+                <div class="q-group-count">4 questions</div>
+            </div>
+            <div class="q-group-card" onclick="showGroup('timing')" id="gc-timing">
+                <div class="q-group-icon" style="background:rgba(79,142,247,.12);">⏱</div>
+                <div class="q-group-title">Timing & Context</div>
+                <div class="q-group-count">2 questions</div>
+            </div>
+            <div class="q-group-card" onclick="showGroup('psychology')" id="gc-psychology">
+                <div class="q-group-icon" style="background:rgba(255,69,96,.12);">😌</div>
+                <div class="q-group-title">Psychology</div>
+                <div class="q-group-count">2 questions</div>
+            </div>
+            <div class="q-group-card" onclick="showGroup('risk')" id="gc-risk">
+                <div class="q-group-icon" style="background:rgba(237,137,54,.12);">⚠</div>
+                <div class="q-group-title">Risk & Money</div>
+                <div class="q-group-count">2 questions</div>
+            </div>
+            <div class="q-group-card" onclick="showGroup('bonus')" id="gc-bonus">
+                <div class="q-group-icon" style="background:rgba(130,80,220,.12);">🔥</div>
+                <div class="q-group-title">Advanced</div>
+                <div class="q-group-count">2 questions</div>
+            </div>
+        </div>
+
+        <!-- QUESTION LIST -->
+        <div class="sec-lbl" id="qListLabel">Discipline & plan questions</div>
+        <div class="q-list-panel" id="qListPanel">
+            <!-- populated by JS -->
+        </div>
+
+        <!-- RESULT PANEL -->
+        <div id="resultPanel" class="result-panel">
+            <div class="result-panel-hdr">
+                <div class="cat-badge" id="resultCatBadge">—</div>
+                <div class="result-q-text" id="resultQText">—</div>
+                <button onclick="closeResult()" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+            </div>
+            <div class="result-panel-body" id="resultBody">
+                <!-- loading / error / stats / table -->
+            </div>
+        </div>
+
+        <div style="margin-top:24px;">
+            <a href="/insights" class="btn btn-ghost">← Back to Summary Insights</a>
+        </div>
+
+    </div><!-- /di-wrap -->
+
+    <!-- HIDDEN SELECT (original structure — for compatibility) -->
+    <select id="questionSelect" style="display:none;">
+        <option value="">-- Choose a question --</option>
+        <optgroup label="Discipline & Plan Execution">
+            <option value="discipline_stats">How many trades had both entry AND exit exactly as planned?</option>
+            <option value="plan_comparison">What is my average P/L when I followed the plan vs when I didn't?</option>
+            <option value="unplanned_exits">How often do unplanned exits reduce my potential profit?</option>
+            <option value="frequent_mistakes">Which mistake occurs most frequently?</option>
+            <option value="losing_with_plan">What % of my losing trades still followed the plan correctly?</option>
+        </optgroup>
+        <optgroup label="Strategy Effectiveness">
+            <option value="strategy_performance">Which strategy gives the highest average P/L?</option>
+            <option value="strategy_volatility">Which strategy has the best win rate when volatility is LOW / HIGH?</option>
+            <option value="strategy_trend">Does my strategy perform better in Uptrend or Sideways markets?</option>
+            <option value="max_drawdown">What is the max drawdown per strategy?</option>
+        </optgroup>
+        <optgroup label="Timing & Market Context">
+            <option value="best_time">At what time of day do my best trades occur?</option>
+            <option value="session_performance">Do trades taken later in the session have worse outcomes?</option>
+        </optgroup>
+        <optgroup label="Psychology & Emotional State">
+            <option value="emotion_performance">What is my average P/L when I feel Calm vs Stressed?</option>
+            <option value="emotional_vs_logical">Do trades taken when I feel great actually perform better?</option>
+        </optgroup>
+        <optgroup label="Risk & Money Management">
+            <option value="risk_adjusted">What risk % gives me the best risk-adjusted returns?</option>
+            <option value="stop_loss_impact">How many profitable trades would have turned into losses if SL was not respected?</option>
+        </optgroup>
+        <optgroup label="Bonus (Advanced)">
+            <option value="expectancy">What is my expectancy per setup?</option>
+            <option value="costly_violation">Which single rule violation costs me the most money overall?</option>
+        </optgroup>
+    </select>
+
+    <script>
+        // ── DATA ─────────────────────────────────────
+        const GROUPS = {
+            discipline: {
+                label: 'Discipline & plan',
+                cat: 'Discipline & Plan',
+                questions: [
+                    { id: 'discipline_stats',  text: 'How many trades had both entry AND exit exactly as planned?' },
+                    { id: 'plan_comparison',   text: 'What is my average P/L when I followed the plan vs when I didn\'t?' },
+                    { id: 'unplanned_exits',   text: 'How often do unplanned exits reduce my potential profit?' },
+                    { id: 'frequent_mistakes', text: 'Which mistake occurs most frequently?' },
+                    { id: 'losing_with_plan',  text: 'What % of my losing trades still followed the plan correctly?' }
+                ]
+            },
+            strategy: {
+                label: 'Strategy effectiveness',
+                cat: 'Strategy',
+                questions: [
+                    { id: 'strategy_performance', text: 'Which strategy gives the highest average P/L?' },
+                    { id: 'strategy_volatility',  text: 'Which strategy has the best win rate when volatility is LOW / HIGH?' },
+                    { id: 'strategy_trend',       text: 'Does my strategy perform better in Uptrend or Sideways markets?' },
+                    { id: 'max_drawdown',         text: 'What is the max drawdown per strategy?' }
+                ]
+            },
+            timing: {
+                label: 'Timing & context',
+                cat: 'Timing',
+                questions: [
+                    { id: 'best_time',          text: 'At what time of day do my best trades occur?' },
+                    { id: 'session_performance',text: 'Do trades taken later in the session have worse outcomes?' }
+                ]
+            },
+            psychology: {
+                label: 'Psychology & emotions',
+                cat: 'Psychology',
+                questions: [
+                    { id: 'emotion_performance',   text: 'What is my average P/L when I feel Calm vs Stressed?' },
+                    { id: 'emotional_vs_logical',  text: 'Do trades taken when I feel great actually perform better?' }
+                ]
+            },
+            risk: {
+                label: 'Risk & money management',
+                cat: 'Risk',
+                questions: [
+                    { id: 'risk_adjusted',     text: 'What risk % gives me the best risk-adjusted returns?' },
+                    { id: 'stop_loss_impact',  text: 'How many profitable trades would have turned into losses if SL was not respected?' }
+                ]
+            },
+            bonus: {
+                label: 'Advanced analysis',
+                cat: 'Advanced',
+                questions: [
+                    { id: 'expectancy',        text: 'What is my expectancy per setup?' },
+                    { id: 'costly_violation',  text: 'Which single rule violation costs me the most money overall?' }
+                ]
+            }
+        };
+
+        let activeGroup = 'discipline';
+        let currentChart = null;
+        let isLoading = false;
+
+        // ── RENDER QUESTION LIST ─────────────────────
+        function showGroup(key) {
+            activeGroup = key;
+            // Update card states
+            Object.keys(GROUPS).forEach(k => {
+                const card = document.getElementById('gc-' + k);
+                if (card) card.classList.toggle('active', k === key);
+            });
+            const g = GROUPS[key];
+            document.getElementById('qListLabel').textContent = g.label + ' questions';
+            const panel = document.getElementById('qListPanel');
+            panel.innerHTML = g.questions.map(q => `
+                <div class="q-item" id="qi-${q.id}" onclick="selectQuestion('${q.id}','${escHTML(q.text)}','${escHTML(g.cat)}')">
+                    <div class="q-item-dot"></div>
+                    <div class="q-item-text">${escHTML(q.text)}</div>
+                    <div class="q-item-arrow">→</div>
+                </div>
+            `).join('');
+        }
+
+        // ── SELECT & FETCH ───────────────────────────
+        async function selectQuestion(id, text, cat) {
+            if (isLoading) return;
+            // Deselect all, select this
+            document.querySelectorAll('.q-item').forEach(el => el.classList.remove('selected'));
+            const el = document.getElementById('qi-' + id);
+            if (el) el.classList.add('selected');
+
+            // Sync hidden select (original API trigger)
+            const sel = document.getElementById('questionSelect');
+            sel.value = id;
+
+            // Show result panel header
+            document.getElementById('resultCatBadge').textContent = cat;
+            document.getElementById('resultQText').textContent = text;
+            document.getElementById('resultPanel').classList.add('visible');
+
+            // Show loading
+            setResultBody(loadingHTML());
+            isLoading = true;
+
+            try {
+                const resp = await fetch('/insights/api/' + id);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                const data = await resp.json();
+
+                if (data.error) { setResultBody(errorHTML(data.error)); return; }
+                if (!data.result) { setResultBody(nodataHTML()); return; }
+
+                let html = '';
+                if (Array.isArray(data.result)) {
+                    html = tableHTML(data.result);
+                } else if (typeof data.result === 'object' && data.result !== null) {
+                    html = statsHTML(data.result);
+                } else {
+                    setResultBody(errorHTML('Unexpected data format')); return;
+                }
+
+                setResultBody(html);
+
+                // Chart
+                if (data.chartData && isValidChart(data.chartData)) {
+                    renderChart(data.chartData);
+                }
+
+                // Scroll to result
+                document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (e) {
+                setResultBody(errorHTML('Error loading insight: ' + e.message));
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        function closeResult() {
+            document.getElementById('resultPanel').classList.remove('visible');
+            document.querySelectorAll('.q-item').forEach(el => el.classList.remove('selected'));
+            cleanupChart();
+        }
+
+        // ── HTML BUILDERS ────────────────────────────
+        function loadingHTML() {
+            return `<div class="loading-state">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Analyzing your data…</div>
+            </div>`;
+        }
+
+        function errorHTML(msg) {
+            return `<div class="error-state">
+                <i data-lucide="alert-circle" style="width:16px;height:16px;flex-shrink:0;"></i>
+                ${escHTML(msg)}
+            </div>`;
+        }
+
+        function nodataHTML() {
+            return `<div class="nodata-state">
+                <div class="nodata-icon">📭</div>
+                No data available for this question.<br>
+                Make sure you have trades with the relevant fields captured.
+            </div>`;
+        }
+
+        function statsHTML(stats) {
+            if (typeof stats !== 'object' || stats === null) return errorHTML('Invalid stats format');
+            let html = '<div class="stats-grid" id="statsContainer">';
+            Object.entries(stats).forEach(([key, value]) => {
+                if (key === 'error') return;
+                const lbl = fmtLabel(key);
+                const val = fmtValue(value);
+                const n   = typeof value === 'number' ? value : parseFloat(value);
+                const cls = isFinite(n) ? (n > 0 ? 'pos' : n < 0 ? 'neg' : 'neu') : 'neu';
+                html += `<div class="stat-box ${cls}">
+                    <div class="stat-lbl">${escHTML(lbl)}</div>
+                    <div class="stat-val ${cls}">${escHTML(val)}</div>
+                </div>`;
+            });
+            html += '</div>';
+            // Chart placeholder (rendered after)
+            html += `<div id="chartContainer" style="display:none;" class="chart-wrap">
+                <canvas id="insightChart"></canvas>
+            </div>`;
+            return html;
+        }
+
+        function tableHTML(rows) {
+            if (!Array.isArray(rows) || rows.length === 0) return nodataHTML();
+            const headers = Object.keys(rows[0]);
+            if (!headers.length) return nodataHTML();
+
+            // Chart placeholder first
+            let html = `<div id="chartContainer" style="display:none;" class="chart-wrap" style="margin-bottom:20px;">
+                <canvas id="insightChart"></canvas>
+            </div>`;
+
+            html += '<div class="res-table-wrap"><table class="res-table"><thead><tr>';
+            headers.forEach(h => { html += `<th>${escHTML(fmtLabel(h))}</th>`; });
+            html += '</tr></thead><tbody>';
+            rows.forEach(row => {
+                html += '<tr>';
+                headers.forEach(h => {
+                    const v = row[h];
+                    const fv = fmtValue(v);
+                    const n  = typeof v === 'number' ? v : parseFloat(v);
+                    const cls = isFinite(n) && typeof v === 'number' ? (n > 0 ? ' pos' : n < 0 ? ' neg' : '') : '';
+                    html += `<td class="num${cls}">${escHTML(fv)}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            return html;
+        }
+
+        function setResultBody(html) {
+            cleanupChart();
+            document.getElementById('resultBody').innerHTML = html;
+            lucide.createIcons();
+        }
+
+        // ── CHART ────────────────────────────────────
+        function isValidChart(d) {
+            return d && Array.isArray(d.labels) && Array.isArray(d.data) && d.labels.length > 0 && d.data.length > 0;
+        }
+
+        function renderChart(d) {
+            const container = document.getElementById('chartContainer');
+            if (!container) return;
+            container.style.display = 'block';
+            const canvas = document.getElementById('insightChart');
+            if (!canvas) return;
+            cleanupChart();
+
+            const dark  = !document.body.classList.contains('light-mode');
+            const gridC = dark ? '#1e1e30' : '#e5e7eb';
+            const textC = dark ? '#444460' : '#9090aa';
+
+            Chart.defaults.color       = textC;
+            Chart.defaults.borderColor = gridC;
+            Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+            Chart.defaults.font.size   = 10;
+
+            currentChart = new Chart(canvas.getContext('2d'), {
+                type: d.type || 'bar',
+                data: {
+                    labels: d.labels.map(l => escHTML(String(l))),
+                    datasets: [{
+                        label: 'Value',
+                        data: d.data.map(v => typeof v === 'number' ? v : parseFloat(v) || 0),
+                        backgroundColor: dark ? 'rgba(201,168,76,.35)' : 'rgba(201,168,76,.5)',
+                        borderColor:     dark ? 'rgba(201,168,76,.8)'  : 'rgba(201,168,76,1)',
+                        borderWidth: 1.5,
+                        borderRadius: 4,
+                        tension: 0.4,
+                        pointBackgroundColor: 'var(--gold)',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: v => '$' + parseFloat(v).toFixed(0) }
+                        }
+                    }
+                }
+            });
+        }
+
+        function cleanupChart() {
+            if (currentChart) {
+                try { currentChart.destroy(); } catch(e) {}
+                currentChart = null;
+            }
+        }
+
+        // ── UTILS ────────────────────────────────────
+        function fmtLabel(key) {
+            return key.replace(/_/g,' ').replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase()).trim();
+        }
+        function fmtValue(v) {
+            if (v === null || v === undefined) return '—';
+            if (typeof v === 'number') return isFinite(v) ? v.toFixed(2) : '—';
+            if (typeof v === 'boolean') return v ? 'Yes' : 'No';
+            if (typeof v === 'string') return v.length > 100 ? v.slice(0,100) + '…' : v;
+            if (Array.isArray(v)) return v.length > 0 ? v.join(', ') : 'N/A';
+            if (typeof v === 'object') { try { return JSON.stringify(v); } catch(e) { return '[Object]'; } }
+            return String(v);
+        }
+        function escHTML(t) {
+            return String(t).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+        }
+
+        // ── THEME ────────────────────────────────────
+        function toggleTheme() {
+            const light = document.body.classList.toggle('light-mode');
+            document.getElementById('themeLabel').textContent = light ? 'LIGHT' : 'DARK';
+            localStorage.setItem('tj-theme', light ? 'light' : 'dark');
+        }
+        (function() {
+            if (localStorage.getItem('tj-theme') === 'light') {
+                document.body.classList.add('light-mode');
+                var lbl = document.getElementById('themeLabel');
+                if (lbl) lbl.textContent = 'LIGHT';
+            }
+        })();
+
+        // ── BOOT ─────────────────────────────────────
+        window.addEventListener('beforeunload', cleanupChart);
+        document.addEventListener('DOMContentLoaded', () => {
+            showGroup('discipline');
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

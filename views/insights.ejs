@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insights - Trading Journal</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* ── INSIGHTS PAGE ── */
+        @keyframes barIn  { from { width: 0; } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+        .ins-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 24px 60px;
+        }
+
+        /* HEADER */
+        .ins-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 36px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .ins-eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .ins-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+        .ins-subtitle {
+            font-size: 11px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+        .ins-header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding-top: 8px;
+        }
+
+        /* SECTION LABEL */
+        .section-lbl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--dim);
+            margin-bottom: 14px;
+        }
+        .section-lbl::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* KPI GRID */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0,1fr));
+            gap: 14px;
+            margin-bottom: 32px;
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 18px 16px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color .2s, transform .15s;
+            animation: fadeUp .4s ease both;
+        }
+        .kpi-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+        .kpi-card:nth-child(1) { animation-delay:.05s; }
+        .kpi-card:nth-child(2) { animation-delay:.10s; }
+        .kpi-card:nth-child(3) { animation-delay:.15s; }
+        .kpi-card:nth-child(4) { animation-delay:.20s; }
+        .kpi-lbl  { font-family:var(--font-mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:10px; }
+        .kpi-val  { font-family:var(--font-mono); font-size:32px; font-weight:500; line-height:1; margin-bottom:8px; }
+        .kpi-sub  { font-size:11px; color:var(--muted); font-family:var(--font-mono); }
+        .kpi-bar  { position:absolute; bottom:0; left:0; height:3px; animation:barIn .8s ease both; animation-delay:.4s; }
+        .kpi--green .kpi-val { color:var(--green); } .kpi--green .kpi-bar { background:var(--green); }
+        .kpi--red   .kpi-val { color:var(--red);   } .kpi--red   .kpi-bar { background:var(--red);   }
+        .kpi--gold  .kpi-val { color:var(--gold);  } .kpi--gold  .kpi-bar { background:var(--gold);  }
+        .kpi--blue  .kpi-val { color:var(--blue);  } .kpi--blue  .kpi-bar { background:var(--blue); width:100% !important; }
+
+        /* LAYOUT */
+        .two-col   { display:grid; grid-template-columns:1fr 1fr;       gap:16px; margin-bottom:16px; }
+        .three-col { display:grid; grid-template-columns:1fr 1fr 1fr;   gap:16px; margin-bottom:16px; }
+
+        /* PANEL */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px 20px;
+            animation: fadeUp .5s ease both;
+            animation-delay: .25s;
+        }
+        .panel-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; }
+        .panel-sub   { font-size:11px; color:var(--dim); font-family:var(--font-mono); margin-bottom:18px; }
+
+        /* STRATEGY BARS */
+        .strat-row  { display:flex; align-items:center; gap:10px; margin-bottom:11px; }
+        .strat-name { font-size:11px; color:var(--muted); font-family:var(--font-mono); width:88px; flex-shrink:0; }
+        .strat-bars { flex:1; display:flex; gap:3px; align-items:center; }
+        .strat-seg  { height:18px; border-radius:3px; min-width:3px; animation:barIn .6s ease both; }
+        .strat-seg--w { background:var(--green); opacity:.85; }
+        .strat-seg--l { background:var(--red);   opacity:.7;  }
+        .strat-wl   { font-size:10px; font-family:var(--font-mono); color:var(--dim); width:36px; text-align:right; flex-shrink:0; }
+
+        /* EMOTION BARS */
+        .emo-row   { display:grid; grid-template-columns:62px 1fr 52px; align-items:center; gap:10px; margin-bottom:10px; }
+        .emo-label { font-size:11px; font-family:var(--font-mono); color:var(--muted); }
+        .emo-track { background:var(--bg-input); border-radius:4px; height:22px; overflow:hidden; border:1px solid var(--border); }
+        .emo-fill  { height:100%; border-radius:3px; display:flex; align-items:center; padding-left:8px; font-size:10px; font-family:var(--font-mono); animation:barIn .7s ease both; }
+        .emo-fill--pos { background:linear-gradient(90deg,rgba(0,212,170,.15),rgba(0,212,170,.45)); color:var(--green); }
+        .emo-fill--neg { background:linear-gradient(90deg,rgba(255,69,96,.15), rgba(255,69,96,.45));  color:var(--red);   }
+        .emo-val       { font-size:11px; font-family:var(--font-mono); text-align:right; }
+        .emo-val--pos  { color:var(--green); }
+        .emo-val--neg  { color:var(--red);   }
+
+        /* CALLOUT */
+        .callout {
+            background:rgba(79,142,247,.07); border:1px solid rgba(79,142,247,.2);
+            border-radius:8px; padding:10px 14px; font-size:11px; color:var(--blue); line-height:1.6; margin-top:14px;
+        }
+
+        /* DONUT */
+        .donut-wrap   { display:flex; flex-direction:column; align-items:center; gap:12px; }
+        .donut-legend { display:flex; gap:18px; font-size:11px; color:var(--muted); font-family:var(--font-mono); }
+        .ddot         { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+
+        /* BEHAVIORAL */
+        .challenge-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); }
+        .challenge-row:last-of-type { border-bottom:none; }
+        .ch-name  { font-size:13px; color:var(--text); }
+        .ch-desc  { font-size:10px; color:var(--dim); font-family:var(--font-mono); margin-top:3px; }
+        .ch-count { font-family:var(--font-mono); font-size:26px; font-weight:500; line-height:1; }
+        .ch--orange { color:var(--gold); }
+        .ch--red    { color:var(--red);  }
+        .comb-bar-wrap { margin-top:14px; }
+        .comb-lbl  { font-size:9px; font-family:var(--font-mono); letter-spacing:.12em; text-transform:uppercase; color:var(--dim); margin-bottom:6px; }
+        .comb-track { background:var(--bg-input); border-radius:4px; height:6px; border:1px solid var(--border); overflow:hidden; }
+        .comb-fill  { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--gold),var(--red)); animation:barIn 1s ease both; animation-delay:.5s; }
+        .comb-sub   { font-size:10px; font-family:var(--font-mono); color:var(--dim); margin-top:5px; }
+
+        /* MONTHLY P/L */
+        .pl-row   { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+        .pl-row:last-child { border-bottom:none; }
+        .pl-month { font-family:var(--font-mono); font-size:11px; color:var(--muted); width:58px; flex-shrink:0; }
+        .pl-bar-col { flex:1; }
+        .pl-mini  { height:4px; background:var(--bg-input); border-radius:2px; overflow:hidden; }
+        .pl-fill  { height:100%; border-radius:2px; animation:barIn .8s ease both; }
+        .pl-fill--g { background:var(--green); }
+        .pl-fill--a { background:var(--gold);  }
+        .pl-amt   { font-family:var(--font-mono); font-size:13px; font-weight:500; width:60px; text-align:right; flex-shrink:0; }
+        .pl-amt--g { color:var(--green); }
+        .pl-amt--a { color:var(--gold);  }
+        .pl-note  { margin-top:12px; background:rgba(255,69,96,.08); border:1px solid rgba(255,69,96,.2); border-radius:6px; padding:9px 12px; font-size:10px; font-family:var(--font-mono); color:var(--red); line-height:1.5; }
+
+        /* MISTAKES */
+        .mistakes-grid { display:grid; grid-template-columns:1fr 1fr; gap:0 32px; }
+        .mistake-row   { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+        .mk-label { font-size:11px; color:var(--muted); font-family:var(--font-mono); width:128px; flex-shrink:0; }
+        .mk-track { flex:1; background:var(--bg-input); border-radius:3px; height:8px; border:1px solid var(--border); overflow:hidden; }
+        .mk-fill  { height:100%; border-radius:3px; background:var(--red); opacity:.7; animation:barIn .7s ease both; }
+        .mk-n     { font-size:10px; font-family:var(--font-mono); color:var(--dim); width:14px; text-align:right; }
+
+        /* TIP */
+        .ins-tip { background:rgba(79,142,247,.07); border:1px solid rgba(79,142,247,.18); border-radius:10px; padding:14px 18px; display:flex; gap:12px; align-items:flex-start; font-size:12px; color:var(--blue); line-height:1.7; margin-top:20px; animation:fadeUp .5s ease both; animation-delay:.4s; }
+        .tip-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+
+        /* FOOTER */
+        .ins-foot { text-align:center; margin-top:28px; font-size:12px; color:var(--dim); font-family:var(--font-mono); }
+        .ins-foot a { color:var(--green); }
+
+        /* RESPONSIVE */
+        @media (max-width:900px) { .three-col { grid-template-columns:1fr 1fr; } .mistakes-grid { grid-template-columns:1fr; } }
+        @media (max-width:600px) { .kpi-grid { grid-template-columns:1fr 1fr; } .two-col,.three-col { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav>
+        <div class="brand">
+            <div class="brand-dot"></div>
+            TRADING JOURNAL
+        </div>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/add-trade">Add Trade</a></li>
+            <li><a href="/trades">My Trades</a></li>
+            <li><a href="/insights" class="active">Insights</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li style="margin-left:auto;">
+                <div class="theme-toggle-wrap">
+                    <span class="theme-label" id="themeLabel">DARK</span>
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+                        <div class="theme-thumb" id="themeThumb"></div>
+                    </button>
+                </div>
+            </li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="ins-wrap">
+
+        <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+
+        <!-- PAGE HEADER -->
+        <div class="ins-header">
+            <div>
+                <div class="ins-eyebrow">
+                    <i data-lucide="trending-up" style="width:12px;height:12px;"></i>
+                    Performance
+                </div>
+                <h1>Trading Insights</h1>
+                <div class="ins-subtitle" id="hdrSub">Loading…</div>
+            </div>
+            <div class="ins-header-right">
+                <a href="/dashboard" class="btn btn-ghost">← Dashboard</a>
+                <a href="/insights/detailed" class="btn btn-primary">Specific Insights ↗</a>
+            </div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="section-lbl">Key metrics</div>
+        <div class="kpi-grid">
+            <div class="kpi-card kpi--green">
+                <div class="kpi-lbl">Plan adherence</div>
+                <div class="kpi-val" id="kA">—</div>
+                <div class="kpi-sub" id="kASub">loading…</div>
+                <div class="kpi-bar" id="kABar" style="width:0%"></div>
+            </div>
+            <div class="kpi-card kpi--red">
+                <div class="kpi-lbl">Over trading</div>
+                <div class="kpi-val" id="kO">—</div>
+                <div class="kpi-sub">Position limit breaks</div>
+                <div class="kpi-bar" id="kOBar" style="width:0%"></div>
+            </div>
+            <div class="kpi-card kpi--gold">
+                <div class="kpi-lbl">Revenge trades</div>
+                <div class="kpi-val" id="kR">—</div>
+                <div class="kpi-sub">Emotional responses</div>
+                <div class="kpi-bar" id="kRBar" style="width:0%"></div>
+            </div>
+            <div class="kpi-card kpi--blue">
+                <div class="kpi-lbl">Total trades</div>
+                <div class="kpi-val" id="kT">—</div>
+                <div class="kpi-sub">This period</div>
+                <div class="kpi-bar" style="width:100%"></div>
+            </div>
+        </div>
+
+        <!-- PERFORMANCE ANALYSIS -->
+        <div class="section-lbl" style="margin-top:28px;">Performance analysis</div>
+        <div class="two-col">
+            <div class="panel">
+                <div class="panel-title">Strategy performance</div>
+                <div class="panel-sub">Win / loss by method</div>
+                <div id="stratRows"><div style="color:var(--dim);font-size:11px;font-family:var(--font-mono);">Loading…</div></div>
+            </div>
+            <div class="panel">
+                <div class="panel-title">Emotion impact</div>
+                <div class="panel-sub">Avg P/L by state</div>
+                <div id="emoRows"><div style="color:var(--dim);font-size:11px;font-family:var(--font-mono);">Loading…</div></div>
+                <div class="callout" id="emoCallout" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- THREE COLUMNS -->
+        <div class="three-col">
+            <!-- Donut -->
+            <div class="panel">
+                <div class="panel-title">Plan adherence</div>
+                <div class="panel-sub" id="donutSub">— followed</div>
+                <div class="donut-wrap">
+                    <canvas id="donutCvs" width="130" height="130"></canvas>
+                    <div class="donut-legend">
+                        <span><span class="ddot" style="background:var(--green)"></span>Followed</span>
+                        <span><span class="ddot" style="background:var(--gold)"></span>Missed</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Behavioral -->
+            <div class="panel">
+                <div class="panel-title">Behavioral challenges</div>
+                <div class="panel-sub">Counts this period</div>
+                <div class="challenge-row">
+                    <div><div class="ch-name">Over trading</div><div class="ch-desc">Position limit breaks</div></div>
+                    <div class="ch-count ch--orange" id="bcO">—</div>
+                </div>
+                <div class="challenge-row">
+                    <div><div class="ch-name">Revenge trading</div><div class="ch-desc">Post-loss reactions</div></div>
+                    <div class="ch-count ch--red" id="bcR">—</div>
+                </div>
+                <div class="comb-bar-wrap">
+                    <div class="comb-lbl">Combined rate</div>
+                    <div class="comb-track"><div class="comb-fill" id="combFill" style="width:0%"></div></div>
+                    <div class="comb-sub" id="combSub">— / — trades affected</div>
+                </div>
+            </div>
+            <!-- Monthly P/L -->
+            <div class="panel">
+                <div class="panel-title">Monthly P/L</div>
+                <div class="panel-sub">Trend over period</div>
+                <div id="plRows"><div style="color:var(--dim);font-size:11px;font-family:var(--font-mono);">Loading…</div></div>
+                <div class="pl-note" id="plNote" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- MISTAKES -->
+        <div class="section-lbl" style="margin-top:12px;">Pattern recognition</div>
+        <div class="panel" style="animation-delay:.35s;">
+            <div class="panel-title">Most common mistakes</div>
+            <div class="panel-sub">Identify your recurring errors</div>
+            <div class="mistakes-grid" id="mkGrid">
+                <div style="color:var(--dim);font-size:11px;font-family:var(--font-mono);">Loading…</div>
+            </div>
+        </div>
+
+        <!-- TIP -->
+        <div class="ins-tip" id="insTip" style="display:none;">
+            <div class="tip-icon">💡</div>
+            <div id="tipText"></div>
+        </div>
+
+        <div class="ins-foot"><a href="/add-trade">Add a new trade →</a></div>
+
+    </div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+
+        // ── FORMAT ──────────────────────────────────
+        function fmt$(n) {
+            const abs = Math.abs(n);
+            const s = abs >= 1000 ? '$' + (abs/1000).toFixed(1) + 'k' : '$' + Math.round(abs);
+            return n < 0 ? '-' + s : s;
+        }
+
+        // ── METRICS + BEHAVIORAL ────────────────────
+        async function loadMetrics() {
+            const [dRes, aRes] = await Promise.all([
+                fetch('/api/analytics/discipline'),
+                fetch('/api/analytics/plan-adherence')
+            ]);
+            const disc = await dRes.json();
+            const adh  = await aRes.json();
+
+            const total   = disc.total || adh.total || 0;
+            const followed = adh.followedPlan || 0;
+            const over    = disc.overTrading   || 0;
+            const revenge = disc.revengeTrade  || 0;
+            const pct     = total > 0 ? Math.round(followed/total*100) : 0;
+
+            $('hdrSub').textContent  = total + ' trades recorded';
+            $('kA').textContent      = pct + '%';
+            $('kASub').textContent   = followed + ' / ' + total + ' trades';
+            $('kABar').style.width   = pct + '%';
+            $('kO').textContent      = over;
+            $('kOBar').style.width   = total > 0 ? Math.round(over/total*100) + '%' : '0%';
+            $('kR').textContent      = revenge;
+            $('kRBar').style.width   = total > 0 ? Math.round(revenge/total*100) + '%' : '0%';
+            $('kT').textContent      = total;
+
+            $('bcO').textContent     = over;
+            $('bcR').textContent     = revenge;
+            const comb = over + revenge;
+            const combPct = total > 0 ? Math.round(comb/total*100) : 0;
+            $('combFill').style.width = combPct + '%';
+            $('combSub').textContent  = comb + ' / ' + total + ' trades affected';
+
+            $('donutSub').textContent = pct + '% followed';
+            drawDonut(followed, total - followed, pct);
+
+            window._m = { total, followed, over, revenge, pct, comb };
+            tryTip();
+        }
+
+        // ── DONUT ───────────────────────────────────
+        function drawDonut(followed, missed, pct) {
+            window._donutArgs = [followed, missed, pct];
+            const cvs  = $('donutCvs');
+            const ctx  = cvs.getContext('2d');
+            const dark = !document.body.classList.contains('light-mode');
+            const gCol = dark ? '#00d4aa' : '#00a688';
+            const aCol = dark ? '#c9a84c' : '#b08a2a';
+            const tCol = dark ? '#e0e0f0' : '#1a1a2e';
+            const mCol = dark ? '#8888aa' : '#5a5a7a';
+            ctx.clearRect(0, 0, 130, 130);
+            const segs = [ { v: followed, c: gCol }, { v: missed, c: aCol } ];
+            const tot  = followed + missed;
+            let s = -Math.PI/2;
+            segs.forEach(sg => {
+                if (!sg.v) return;
+                const sw = (sg.v/tot) * Math.PI * 2;
+                ctx.beginPath(); ctx.arc(65, 65, 48, s, s+sw);
+                ctx.lineWidth = 16; ctx.strokeStyle = sg.c; ctx.stroke();
+                s += sw;
+            });
+            ctx.fillStyle = tCol;
+            ctx.font = "600 17px 'IBM Plex Mono',monospace";
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(pct + '%', 65, 58);
+            ctx.font = "400 10px 'IBM Plex Mono',monospace";
+            ctx.fillStyle = mCol;
+            ctx.fillText('followed', 65, 77);
+        }
+
+        // ── STRATEGY ────────────────────────────────
+        async function loadStrategy() {
+            const res  = await fetch('/api/analytics/strategy-performance');
+            const data = await res.json();
+            const keys = Object.keys(data).sort();
+            if (!keys.length) return;
+            const maxW = Math.max(...keys.map(k => data[k].wins + data[k].losses));
+            const sc   = 110 / maxW;
+            let html = '';
+            keys.forEach((name, i) => {
+                const w = data[name].wins   || 0;
+                const l = data[name].losses || 0;
+                const d = (i * 80) + 300;
+                html += `<div class="strat-row">
+                    <div class="strat-name">${name}</div>
+                    <div class="strat-bars">
+                        <div class="strat-seg strat-seg--w" style="width:${Math.round(w*sc)}px;animation-delay:${d}ms"></div>
+                        <div class="strat-seg strat-seg--l" style="width:${Math.round(l*sc)}px;animation-delay:${d+60}ms"></div>
+                    </div>
+                    <div class="strat-wl">${w}/${l}</div>
+                </div>`;
+            });
+            $('stratRows').innerHTML = html;
+            const best = keys.reduce((b,k) => (data[k].wins/(data[k].wins+data[k].losses||1)) > (data[b].wins/(data[b].wins+data[b].losses||1)) ? k : b, keys[0]);
+            window._best = { name: best, w: data[best].wins, l: data[best].losses };
+            tryTip();
+        }
+
+        // ── EMOTION ─────────────────────────────────
+        async function loadEmotion() {
+            const res  = await fetch('/api/analytics/emotion-performance');
+            const data = await res.json();
+            const keys = Object.keys(data);
+            if (!keys.length) return;
+            const maxA = Math.max(...keys.map(k => Math.abs(data[k].avgPL)));
+            const sc   = 90 / maxA;
+            let html = '';
+            keys.forEach((name, i) => {
+                const pl  = parseFloat((data[name].avgPL||0).toFixed(0));
+                const pos = pl >= 0;
+                const pct = Math.min(Math.round(Math.abs(pl)*sc), 95);
+                const d   = (i*80)+300;
+                html += `<div class="emo-row">
+                    <div class="emo-label">${name}</div>
+                    <div class="emo-track">
+                        <div class="emo-fill ${pos?'emo-fill--pos':'emo-fill--neg'}" style="width:${pct}%;animation-delay:${d}ms">${fmt$(pl)}</div>
+                    </div>
+                    <div class="emo-val ${pos?'emo-val--pos':'emo-val--neg'}">${fmt$(pl)}</div>
+                </div>`;
+            });
+            $('emoRows').innerHTML = html;
+            const worst = keys.reduce((b,k) => data[k].avgPL < data[b].avgPL ? k : b, keys[0]);
+            window._worst = { name: worst, pl: data[worst].avgPL };
+            const good = keys.filter(k=>data[k].avgPL>0).join(', ');
+            const bad  = keys.filter(k=>data[k].avgPL<0).join(', ');
+            if (good||bad) {
+                const el = $('emoCallout');
+                el.textContent = (good ? 'Profitable states: '+good+'. ' : '') + (bad ? bad+' consistently cost you.' : '');
+                el.style.display = 'block';
+            }
+            tryTip();
+        }
+
+        // ── MONTHLY P/L ─────────────────────────────
+        async function loadMonthly() {
+            const res  = await fetch('/api/analytics/monthly-trend');
+            const data = await res.json();
+            const months = Object.keys(data).sort();
+            if (!months.length) return;
+            const pls  = months.map(m => parseFloat(data[m]));
+            const maxP = Math.max(...pls);
+            let html = '';
+            pls.forEach((pl, i) => {
+                const pct   = maxP > 0 ? Math.round(pl/maxP*100) : 0;
+                const amber = i > 0 && pl < pls[i-1];
+                const d     = (i*100)+300;
+                html += `<div class="pl-row">
+                    <div class="pl-month">${months[i]}</div>
+                    <div class="pl-bar-col"><div class="pl-mini"><div class="pl-fill ${amber?'pl-fill--a':'pl-fill--g'}" style="width:${pct}%;animation-delay:${d}ms"></div></div></div>
+                    <div class="pl-amt ${amber?'pl-amt--a':'pl-amt--g'}">${fmt$(pl)}</div>
+                </div>`;
+            });
+            $('plRows').innerHTML = html;
+            const first = pls[0], last = pls[pls.length-1];
+            if (last < first && months.length > 1) {
+                const note = $('plNote');
+                note.textContent = '↓ ' + fmt$(first-last) + ' from peak · down ' + Math.round((first-last)/first*100) + '% over ' + months.length + ' months';
+                note.style.display = 'block';
+            }
+        }
+
+        // ── MISTAKES ────────────────────────────────
+        async function loadMistakes() {
+            const res  = await fetch('/api/analytics/mistakes');
+            const data = await res.json();
+            const sorted = Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,10);
+            if (!sorted.length) return;
+            const maxC = sorted[0][1];
+            let html = '';
+            sorted.forEach(([label, count], i) => {
+                const pct = Math.round(count/maxC*100);
+                const d   = (i*70)+300;
+                html += `<div class="mistake-row">
+                    <div class="mk-label">${label}</div>
+                    <div class="mk-track"><div class="mk-fill" style="width:${pct}%;animation-delay:${d}ms"></div></div>
+                    <div class="mk-n">${count}</div>
+                </div>`;
+            });
+            $('mkGrid').innerHTML = html;
+            window._topMk = sorted[0][0];
+            tryTip();
+        }
+
+        // ── INSIGHT TIP ─────────────────────────────
+        function tryTip() {
+            if (!window._m || !window._best || !window._worst || !window._topMk) return;
+            const { total, comb } = window._m;
+            const combPct = Math.round(comb/total*100);
+            $('tipText').innerHTML =
+                `Your strongest edge is <strong>${window._best.name}</strong> (${window._best.w}W&nbsp;/&nbsp;${window._best.l}L). ` +
+                `<strong>${window._worst.name}</strong> is your most costly emotion at ${fmt$(window._worst.pl)} avg&nbsp;P/L — address that first. ` +
+                (comb > 0 ? `${comb} behavioral incidents affect ${combPct}% of your trades — reducing them is your highest-leverage improvement. ` : '') +
+                `Most common mistake: <strong>${window._topMk}</strong>.`;
+            $('insTip').style.display = 'flex';
+        }
+
+        // ── THEME ────────────────────────────────────
+        function toggleTheme() {
+            const light = document.body.classList.toggle('light-mode');
+            const lbl = $('themeLabel');
+            if (lbl) lbl.textContent = light ? 'LIGHT' : 'DARK';
+            localStorage.setItem('tj-theme', light ? 'light' : 'dark');
+            if (window._donutArgs) drawDonut(...window._donutArgs);
+        }
+        (function() {
+            if (localStorage.getItem('tj-theme') === 'light') {
+                document.body.classList.add('light-mode');
+                const lbl = $('themeLabel');
+                if (lbl) lbl.textContent = 'LIGHT';
+            }
+        })();
+
+        // ── BOOT ─────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMetrics();
+            loadStrategy();
+            loadEmotion();
+            loadMonthly();
+            loadMistakes();
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>

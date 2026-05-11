@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Trades - Trading Journal</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* ══════════════════════════════════════
+           TRADES PAGE
+        ══════════════════════════════════════ */
+        @keyframes fadeUp {
+            from { opacity:0; transform:translateY(10px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        @keyframes modalIn {
+            from { opacity:0; transform:translateY(-24px) scale(0.98); }
+            to   { opacity:1; transform:translateY(0) scale(1); }
+        }
+
+        .tr-wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px 60px;
+        }
+
+        /* ── HEADER ───────────────────────── */
+        .tr-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 16px;
+            animation: fadeUp .4s ease both;
+        }
+        .tr-eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .tr-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+        .tr-subtitle {
+            font-size: 11px;
+            color: var(--muted);
+            font-family: var(--font-mono);
+        }
+        .tr-header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding-top: 8px;
+        }
+
+        /* ── SECTION LABEL ────────────────── */
+        .sec-lbl {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--dim);
+            margin-bottom: 14px;
+        }
+        .sec-lbl::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ── FILTER PANEL ─────────────────── */
+        .filter-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 22px;
+            margin-bottom: 28px;
+            animation: fadeUp .4s ease both;
+            animation-delay: .05s;
+        }
+        .filter-panel form {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr auto;
+            gap: 14px;
+            align-items: flex-end;
+        }
+        .filter-panel .fg { display: flex; flex-direction: column; gap: 6px; }
+        .filter-panel label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--dim);
+        }
+        .filter-panel select,
+        .filter-panel input[type="date"] {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            transition: border-color .2s;
+            width: 100%;
+        }
+        .filter-panel select:focus,
+        .filter-panel input[type="date"]:focus {
+            outline: none;
+            border-color: var(--border-bright);
+        }
+        .filter-btn {
+            background: var(--gold);
+            color: var(--bg);
+            border: none;
+            border-radius: 8px;
+            padding: 9px 22px;
+            font-family: var(--font-ui);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: opacity .2s, transform .15s;
+            white-space: nowrap;
+            height: 38px;
+        }
+        .filter-btn:hover { opacity: .88; transform: translateY(-1px); }
+
+        /* ── SUMMARY STRIP ────────────────── */
+        .summary-strip {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .s-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 100px;
+        }
+        .s-chip-lbl { font-family:var(--font-mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); }
+        .s-chip-val { font-family:var(--font-mono); font-size:16px; font-weight:500; }
+        .s-chip-val.green { color: var(--green); }
+        .s-chip-val.red   { color: var(--red);   }
+        .s-chip-val.gold  { color: var(--gold);  }
+
+        /* ── TABLE ────────────────────────── */
+        .trades-table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            animation: fadeUp .5s ease both;
+            animation-delay: .15s;
+        }
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .trades-table thead {
+            background: var(--bg-hover);
+            border-bottom: 1px solid var(--border-bright);
+        }
+        .trades-table th {
+            padding: 13px 16px;
+            text-align: left;
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--dim);
+            white-space: nowrap;
+        }
+        .trades-table th:last-child { text-align: center; }
+        .trades-table tbody tr {
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background .15s;
+            position: relative;
+        }
+        .trades-table tbody tr:last-child { border-bottom: none; }
+        .trades-table tbody tr:hover { background: var(--bg-hover); }
+        .trades-table tbody tr.win  { border-left: 2px solid var(--green); }
+        .trades-table tbody tr.loss { border-left: 2px solid var(--red);   }
+        .trades-table td {
+            padding: 14px 16px;
+            font-size: 13px;
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+        /* stock cell */
+        .stock-cell { display: flex; align-items: center; gap: 10px; }
+        .stock-avatar {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-bright);
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--gold);
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+        .stock-name { font-weight: 600; font-size: 13px; color: var(--text); text-transform: uppercase; letter-spacing: .04em; }
+        .stock-qty  { font-family: var(--font-mono); font-size: 10px; color: var(--dim); }
+
+        /* badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 5px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+        }
+        .badge-buy  { background: rgba(0,212,170,.12); color: var(--green); border: 1px solid rgba(0,212,170,.25); }
+        .badge-sell { background: rgba(255,69,96,.12);  color: var(--red);   border: 1px solid rgba(255,69,96,.25); }
+
+        /* price cells */
+        .price-cell { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+        .pl-cell    { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+        .pl-cell.pos { color: var(--green); }
+        .pl-cell.neg { color: var(--red);   }
+
+        /* strategy pill */
+        .strat-pill {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--muted);
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 3px 8px;
+            white-space: nowrap;
+        }
+
+        /* emotion tag */
+        .emo-tag {
+            font-size: 11px;
+            font-family: var(--font-mono);
+            color: var(--dim);
+        }
+
+        /* date cell */
+        .date-cell { font-family: var(--font-mono); font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+        /* view btn */
+        .view-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: transparent;
+            border: 1px solid var(--border-bright);
+            color: var(--gold);
+            font-family: var(--font-mono);
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            padding: 5px 11px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .view-btn:hover { background: rgba(201,168,76,.1); border-color: var(--gold); }
+
+        /* ── EMPTY STATE ──────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 64px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .empty-icon { font-size: 36px; margin-bottom: 16px; opacity: .4; }
+        .empty-state h3 { color: var(--text); font-size: 16px; margin-bottom: 8px; }
+        .empty-state p  { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+
+        /* ── MODAL ────────────────────────── */
+        .t-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0,0,0,.72);
+            align-items: center;
+            justify-content: center;
+        }
+        .t-modal.show { display: flex; }
+        .t-modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-bright);
+            border-radius: 14px;
+            width: 92%;
+            max-width: 780px;
+            max-height: 92vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: modalIn .25s ease both;
+        }
+
+        /* modal header */
+        .t-modal-hdr {
+            background: var(--bg-hover);
+            border-bottom: 1px solid var(--border-bright);
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .t-modal-hdr-left { display: flex; align-items: center; gap: 14px; }
+        .t-modal-ticker {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+        .t-modal-pl {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .t-modal-pl.pos { color: var(--green); }
+        .t-modal-pl.neg { color: var(--red);   }
+        .t-modal-close {
+            width: 32px; height: 32px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--muted);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .15s;
+        }
+        .t-modal-close:hover { background: var(--border-bright); color: var(--text); }
+
+        /* modal body */
+        .t-modal-body {
+            padding: 22px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        /* detail section */
+        .d-section { margin-bottom: 22px; }
+        .d-section-title {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .d-section-title::before {
+            content: '';
+            width: 3px; height: 10px;
+            background: var(--gold);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .d-section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .d-grid.full { grid-template-columns: 1fr; }
+        .d-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+        .d-item {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+        .d-lbl { font-family:var(--font-mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim); margin-bottom:6px; }
+        .d-val { font-family:var(--font-mono); font-size:14px; font-weight:500; color:var(--text); }
+        .d-val.pos { color: var(--green); }
+        .d-val.neg { color: var(--red);   }
+        .d-val.text { font-family: var(--font-ui); font-size:13px; font-weight:400; white-space: pre-wrap; line-height: 1.6; }
+
+        /* check list */
+        .chk-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .chk-item {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: var(--text);
+        }
+        .chk-item.fail { color: var(--muted); }
+        .chk-mark { font-size: 12px; font-weight: 700; }
+        .chk-item .chk-mark { color: var(--green); }
+        .chk-item.fail .chk-mark { color: var(--red); }
+
+        /* tag list (mistakes / good actions) */
+        .tag-list { display: flex; flex-wrap: wrap; gap: 7px; }
+        .tag {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 5px;
+            border: 1px solid;
+        }
+        .tag-bad  { background: rgba(255,69,96,.08);  border-color: rgba(255,69,96,.2);  color: var(--red);   }
+        .tag-good { background: rgba(0,212,170,.08);   border-color: rgba(0,212,170,.2);   color: var(--green); }
+
+        /* modal footer */
+        .t-modal-ftr {
+            padding: 14px 22px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .t-modal-ftr .close-modal-btn {
+            flex: 1;
+            background: transparent;
+            border: 1px solid var(--border-bright);
+            color: var(--muted);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: var(--font-ui);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .t-modal-ftr .close-modal-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .t-modal-ftr .delete-form { flex: 1; margin: 0; }
+        .t-modal-ftr .delete-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid rgba(255,69,96,.35);
+            color: var(--red);
+            border-radius: 8px;
+            padding: 10px;
+            font-family: var(--font-ui);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .t-modal-ftr .delete-btn:hover { background: rgba(255,69,96,.1); }
+
+        /* ── RESPONSIVE ───────────────────── */
+        @media (max-width: 900px) {
+            .filter-panel form { grid-template-columns: 1fr 1fr; }
+            .filter-btn { grid-column: span 2; }
+        }
+        @media (max-width: 600px) {
+            .filter-panel form { grid-template-columns: 1fr; }
+            .filter-btn { grid-column: auto; }
+            .d-grid { grid-template-columns: 1fr; }
+            .d-grid.three { grid-template-columns: 1fr 1fr; }
+            .chk-list { grid-template-columns: 1fr; }
+            .trades-table th:nth-child(4),
+            .trades-table td:nth-child(4),
+            .trades-table th:nth-child(5),
+            .trades-table td:nth-child(5),
+            .trades-table th:nth-child(8),
+            .trades-table td:nth-child(8) { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav>
+        <div class="brand">
+            <div class="brand-dot"></div>
+            TRADING JOURNAL
+        </div>
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/add-trade">Add Trade</a></li>
+            <li><a href="/trades" class="active">My Trades</a></li>
+            <li><a href="/insights">Insights</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li style="margin-left:auto;">
+                <div class="theme-toggle-wrap">
+                    <span class="theme-label" id="themeLabel">DARK</span>
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+                        <div class="theme-thumb" id="themeThumb"></div>
+                    </button>
+                </div>
+            </li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="tr-wrap">
+
+        <% if (error) { %>
+        <div class="alert alert-danger"><strong>Error:</strong> <%= error %></div>
+        <% } %>
+
+        <!-- PAGE HEADER -->
+        <div class="tr-header">
+            <div>
+                <div class="tr-eyebrow">
+                    <i data-lucide="list" style="width:12px;height:12px;"></i>
+                    Trade Log
+                </div>
+                <h1>My Trades</h1>
+                <div class="tr-subtitle"><%= trades.length %> trade<%= trades.length !== 1 ? 's' : '' %> found</div>
+            </div>
+            <div class="tr-header-right">
+                <a href="/dashboard" class="btn btn-ghost">← Dashboard</a>
+                <a href="/add-trade" class="btn btn-primary">+ Add Trade</a>
+            </div>
+        </div>
+
+        <!-- FILTER PANEL -->
+        <div class="sec-lbl">Filters</div>
+        <div class="filter-panel">
+            <form method="GET">
+                <div class="fg">
+                    <label for="strategy">Strategy</label>
+                    <select id="strategy" name="strategy">
+                        <option value="all" <%= selectedStrategy === 'all' ? 'selected' : '' %>>All Strategies</option>
+                        <% strategies.forEach(strat => { %>
+                            <option value="<%= strat %>" <%= selectedStrategy === strat ? 'selected' : '' %>><%= strat %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="fg">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate" name="startDate" value="<%= startDate %>">
+                </div>
+                <div class="fg">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate" name="endDate" value="<%= endDate %>">
+                </div>
+                <button type="submit" class="filter-btn">
+                    <i data-lucide="filter" style="width:12px;height:12px;display:inline;vertical-align:middle;margin-right:4px;"></i>
+                    Filter
+                </button>
+            </form>
+        </div>
+
+        <% if (trades.length === 0) { %>
+        <!-- EMPTY STATE -->
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h3>No trades found</h3>
+            <p>Try adjusting your filters or record your first trade</p>
+            <a href="/add-trade" class="btn btn-primary">+ Add your first trade</a>
+        </div>
+
+        <% } else {
+            // Compute summary stats
+            let totalPL = 0, wins = 0, losses = 0;
+            trades.forEach(t => {
+                const pl = t.tradeType === 'Buy'
+                    ? (t.exitPrice - t.entryPrice) * t.quantity
+                    : (t.entryPrice - t.exitPrice) * t.quantity;
+                totalPL += pl;
+                pl > 0 ? wins++ : losses++;
+            });
+            const winRate = trades.length > 0 ? Math.round(wins / trades.length * 100) : 0;
+        %>
+
+        <!-- SUMMARY STRIP -->
+        <div class="summary-strip">
+            <div class="s-chip">
+                <span class="s-chip-lbl">Total P/L</span>
+                <span class="s-chip-val <%= totalPL >= 0 ? 'green' : 'red' %>">
+                    <%= totalPL >= 0 ? '+' : '' %>$<%= totalPL.toFixed(2) %>
+                </span>
+            </div>
+            <div class="s-chip">
+                <span class="s-chip-lbl">Win Rate</span>
+                <span class="s-chip-val gold"><%= winRate %>%</span>
+            </div>
+            <div class="s-chip">
+                <span class="s-chip-lbl">Wins</span>
+                <span class="s-chip-val green"><%= wins %></span>
+            </div>
+            <div class="s-chip">
+                <span class="s-chip-lbl">Losses</span>
+                <span class="s-chip-val red"><%= losses %></span>
+            </div>
+            <div class="s-chip">
+                <span class="s-chip-lbl">Total</span>
+                <span class="s-chip-val"><%= trades.length %></span>
+            </div>
+        </div>
+
+        <!-- TRADES TABLE -->
+        <div class="sec-lbl">Trade history</div>
+        <div class="trades-table-wrap">
+            <table class="trades-table">
+                <thead>
+                    <tr>
+                        <th>Stock</th>
+                        <th>Type</th>
+                        <th>Strategy</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>P/L</th>
+                        <th>Emotion</th>
+                        <th>Date & Time</th>
+                        <th style="text-align:center;">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% trades.forEach((trade, index) => {
+                        const pl = trade.tradeType === 'Buy'
+                            ? (trade.exitPrice - trade.entryPrice) * trade.quantity
+                            : (trade.entryPrice - trade.exitPrice) * trade.quantity;
+                        const isWin = pl > 0;
+                        const initials = trade.stockName.slice(0,3).toUpperCase();
+                        const dt = new Date(trade.tradeDateTime);
+                        const dateStr = dt.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+                        const timeStr = dt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+                    %>
+                    <tr class="<%= isWin ? 'win' : 'loss' %>" onclick="openTradeModal(<%= index %>)">
+                        <td>
+                            <div class="stock-cell">
+                                <div class="stock-avatar"><%= initials %></div>
+                                <div>
+                                    <div class="stock-name"><%= trade.stockName %></div>
+                                    <div class="stock-qty">Qty: <%= trade.quantity %></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge <%= trade.tradeType === 'Buy' ? 'badge-buy' : 'badge-sell' %>">
+                                <%= trade.tradeType %>
+                            </span>
+                        </td>
+                        <td><span class="strat-pill"><%= trade.strategy %></span></td>
+                        <td><span class="price-cell">$<%= trade.entryPrice.toFixed(2) %></span></td>
+                        <td><span class="price-cell">$<%= trade.exitPrice.toFixed(2) %></span></td>
+                        <td>
+                            <span class="pl-cell <%= isWin ? 'pos' : 'neg' %>">
+                                <%= isWin ? '+' : '' %>$<%= pl.toFixed(2) %>
+                            </span>
+                        </td>
+                        <td><span class="emo-tag"><%= trade.emotion || '—' %></span></td>
+                        <td>
+                            <div class="date-cell">
+                                <div><%= dateStr %></div>
+                                <div style="color:var(--dim);font-size:10px;"><%= timeStr %></div>
+                            </div>
+                        </td>
+                        <td style="text-align:center;">
+                            <button class="view-btn" onclick="event.stopPropagation(); openTradeModal(<%= index %>)">
+                                <i data-lucide="eye" style="width:11px;height:11px;"></i>
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+        <% } %>
+
+        <div style="margin-top:24px;">
+            <a href="/dashboard" class="btn btn-ghost">← Back to Dashboard</a>
+        </div>
+
+    </div><!-- /tr-wrap -->
+
+    <!-- ═══════════════════════════════════
+         TRADE DETAIL MODAL
+    ═══════════════════════════════════ -->
+    <div id="tradeModal" class="t-modal">
+        <div class="t-modal-box">
+            <div class="t-modal-hdr">
+                <div class="t-modal-hdr-left">
+                    <span class="t-modal-ticker" id="modalTicker">—</span>
+                    <span class="t-modal-pl" id="modalPL">—</span>
+                    <span id="modalBadge"></span>
+                </div>
+                <button class="t-modal-close" onclick="closeTradeModal()">&times;</button>
+            </div>
+
+            <div class="t-modal-body" id="modalBody">
+                <!-- Populated by JS -->
+            </div>
+
+            <div class="t-modal-ftr">
+                <button class="close-modal-btn" onclick="closeTradeModal()">Close</button>
+                <form method="POST" action="/trade/:id/delete" class="delete-form" id="deleteForm">
+                    <button type="submit" class="delete-btn" onclick="return confirm('Delete this trade? This cannot be undone.');">
+                        Delete Trade
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Track every trade, improve every day</p>
+    </footer>
+
+    <script>
+        const trades = <%- JSON.stringify(trades) %>;
+
+        // ── OPEN MODAL ───────────────────────────────
+        function openTradeModal(index) {
+            const t   = trades[index];
+            const pl  = t.tradeType === 'Buy'
+                ? (t.exitPrice - t.entryPrice) * t.quantity
+                : (t.entryPrice - t.exitPrice) * t.quantity;
+            const pos = pl > 0;
+            const dt  = new Date(t.tradeDateTime).toLocaleString();
+
+            // Header
+            document.getElementById('modalTicker').textContent = t.stockName.toUpperCase();
+            const plEl = document.getElementById('modalPL');
+            plEl.textContent = (pos ? '+' : '') + '$' + pl.toFixed(2);
+            plEl.className   = 't-modal-pl ' + (pos ? 'pos' : 'neg');
+            document.getElementById('modalBadge').innerHTML =
+                `<span class="badge ${t.tradeType === 'Buy' ? 'badge-buy' : 'badge-sell'}">${t.tradeType}</span>`;
+
+            // Delete form
+            document.getElementById('deleteForm').action = `/trade/${t._id}/delete`;
+
+            // ── BUILD CONTENT ────────────────────────
+            let html = '';
+
+            // Trade Info
+            html += section('Trade Information', `
+                ${item('Stock', t.stockName.toUpperCase())}
+                ${item('Trade Type', t.tradeType, pos ? 'pos' : 'neg')}
+                ${item('Strategy', t.strategy)}
+                ${item('Date & Time', dt)}
+            `);
+
+            // Entry & Exit
+            html += section('Entry & Exit', `
+                ${item('Entry Price', '$' + t.entryPrice.toFixed(2))}
+                ${item('Exit Price',  '$' + t.exitPrice.toFixed(2))}
+                ${item('Quantity',    t.quantity)}
+                ${item('P/L', (pos?'+':'') + '$' + pl.toFixed(2), pos ? 'pos' : 'neg')}
+            `);
+
+            // Market Context
+            if (t.setupType || t.marketTrend || t.volatility) {
+                html += section('Market Context', `
+                    ${t.setupType   ? item('Setup Type',    t.setupType)   : ''}
+                    ${t.marketTrend ? item('Market Trend',  t.marketTrend) : ''}
+                    ${t.volatility  ? item('Volatility',    t.volatility)  : ''}
+                `);
+            }
+
+            // Risk & Execution
+            if (t.stopLoss || t.riskPercent || t.entryQuality || t.exitQuality) {
+                html += section('Risk & Execution', `
+                    ${t.stopLoss     ? item('Stop Loss',     '$' + t.stopLoss.toFixed(2))    : ''}
+                    ${t.riskPercent  ? item('Risk %',        t.riskPercent.toFixed(2) + '%') : ''}
+                    ${t.entryQuality ? item('Entry Quality', t.entryQuality)                 : ''}
+                    ${t.exitQuality  ? item('Exit Quality',  t.exitQuality)                  : ''}
+                `);
+            }
+
+            // Emotional State
+            if (t.emotionBefore || t.emotion || t.emotionAfter) {
+                html += section('Emotional State', `
+                    ${t.emotionBefore ? item('Before', t.emotionBefore) : ''}
+                    ${t.emotion       ? item('During', t.emotion)       : ''}
+                    ${t.emotionAfter  ? item('After',  t.emotionAfter)  : ''}
+                `, 'three');
+            }
+
+            // Discipline
+            if (t.followedPlan !== null || t.overTrading !== null || t.revengeTrade !== null) {
+                let chkHTML = '<div class="chk-list">';
+                if (t.followedPlan  !== null) chkHTML += chk('Followed Plan',  t.followedPlan);
+                if (t.overTrading   !== null) chkHTML += chk('Over Trading',   !t.overTrading);
+                if (t.revengeTrade  !== null) chkHTML += chk('Revenge Trade',  !t.revengeTrade);
+                chkHTML += '</div>';
+                html += `<div class="d-section"><div class="d-section-title">Discipline & Behavior</div>${chkHTML}</div>`;
+            }
+
+            // Mistakes & Good Actions
+            const hasMistakes = t.mistakes && t.mistakes.length > 0;
+            const hasGood     = t.goodActions && t.goodActions.length > 0;
+            if (hasMistakes || hasGood) {
+                let whHTML = '';
+                if (hasMistakes) {
+                    whHTML += `<div style="margin-bottom:12px;">
+                        <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:8px;">Mistakes Made</div>
+                        <div class="tag-list">${t.mistakes.map(m => `<span class="tag tag-bad">${m}</span>`).join('')}</div>
+                    </div>`;
+                }
+                if (hasGood) {
+                    whHTML += `<div>
+                        <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:8px;">Good Actions</div>
+                        <div class="tag-list">${t.goodActions.map(a => `<span class="tag tag-good">${a}</span>`).join('')}</div>
+                    </div>`;
+                }
+                html += `<div class="d-section"><div class="d-section-title">What Happened</div>${whHTML}</div>`;
+            }
+
+            // Learning
+            if (t.learningNote || t.nextRule) {
+                html += section('Learning & Growth', `
+                    ${t.learningNote ? itemText('Learning Note',        t.learningNote) : ''}
+                    ${t.nextRule     ? itemText('Rule for Next Trade',  t.nextRule)     : ''}
+                `, 'full');
+            }
+
+            // Notes
+            if (t.notes) {
+                html += section('Additional Notes', itemText('', t.notes), 'full');
+            }
+
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('tradeModal').classList.add('show');
+            lucide.createIcons();
+        }
+
+        // ── MODAL HELPERS ────────────────────────────
+        function section(title, content, gridClass) {
+            const cls = gridClass || '';
+            return `<div class="d-section">
+                <div class="d-section-title">${title}</div>
+                <div class="d-grid ${cls}">${content}</div>
+            </div>`;
+        }
+        function item(label, value, valClass) {
+            return `<div class="d-item">
+                <div class="d-lbl">${label}</div>
+                <div class="d-val ${valClass||''}">${value}</div>
+            </div>`;
+        }
+        function itemText(label, value) {
+            return `<div class="d-item">
+                ${label ? `<div class="d-lbl">${label}</div>` : ''}
+                <div class="d-val text">${value}</div>
+            </div>`;
+        }
+        function chk(label, pass) {
+            return `<div class="chk-item ${pass ? '' : 'fail'}">
+                <span class="chk-mark">${pass ? '✓' : '✗'}</span>
+                ${label}
+            </div>`;
+        }
+
+        // ── CLOSE MODAL ──────────────────────────────
+        function closeTradeModal() {
+            document.getElementById('tradeModal').classList.remove('show');
+        }
+        window.addEventListener('click', e => {
+            if (e.target === document.getElementById('tradeModal')) closeTradeModal();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeTradeModal();
+        });
+
+        // ── THEME ────────────────────────────────────
+        function toggleTheme() {
+            const light = document.body.classList.toggle('light-mode');
+            document.getElementById('themeLabel').textContent = light ? 'LIGHT' : 'DARK';
+            localStorage.setItem('tj-theme', light ? 'light' : 'dark');
+        }
+        (function() {
+            if (localStorage.getItem('tj-theme') === 'light') {
+                document.body.classList.add('light-mode');
+                var lbl = document.getElementById('themeLabel');
+                if (lbl) lbl.textContent = 'LIGHT';
+            }
+        })();
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>

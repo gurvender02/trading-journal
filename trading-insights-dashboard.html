@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Insights Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ═══════════════════════════════════════════════════════════ */
+        /* RESET & BASE STYLES                                         */
+        /* ═══════════════════════════════════════════════════════════ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --green:   #1b7a5a;
+            --red:     #c23b3b;
+            --amber:   #b06a0a;
+            --accent:  #2354e6;
+            --ink:     #0e0f0f;
+            --ink2:    #3a3a3a;
+            --ink3:    #7a7a7a;
+            --bg:      #f4f2ed;
+        }
+
+        html {
+            font-family: 'Sora', sans-serif;
+            color: var(--ink);
+            background-color: var(--bg);
+        }
+
+        body {
+            line-height: 1.5;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* UTILITY CLASSES                                              */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 28px 20px;
+        }
+
+        .row {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .cols-2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .cols-3 {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .cols-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        @media (max-width: 519px) {
+            .cols-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .cols-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .cols-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* TYPOGRAPHY                                                   */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--ink3);
+            margin-bottom: 4px;
+        }
+
+        .kpi-value {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            color: var(--ink);
+            margin-bottom: 8px;
+        }
+
+        .sub-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--ink3);
+        }
+
+        .body-text {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--ink2);
+            line-height: 1.6;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* CARDS & CONTAINERS                                           */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .card {
+            background: #ffffff;
+            border: 0.5px solid rgba(0, 0, 0, 0.08);
+            border-radius: 14px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        .card.interactive:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .card.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(35, 84, 230, 0.1);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* HEADER                                                       */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+            gap: 20px;
+        }
+
+        .header-left .breadcrumb {
+            font-size: 11px;
+            color: var(--ink3);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--ink);
+        }
+
+        .header-left .subtitle {
+            font-size: 13px;
+            color: var(--ink3);
+            font-weight: 400;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-outline {
+            border: 1px solid var(--ink3);
+            color: var(--ink);
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--ink);
+            background: rgba(14, 15, 15, 0.02);
+        }
+
+        .btn-filled {
+            background: var(--accent);
+            color: #ffffff;
+        }
+
+        .btn-filled:hover {
+            background: #1e47cc;
+        }
+
+        @media (max-width: 400px) {
+            .header {
+                flex-direction: column;
+            }
+
+            .header-left h1 {
+                font-size: 24px;
+            }
+
+            .header-right {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* KPI CARDS                                                    */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .kpi-card {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card-label {
+            color: var(--ink3);
+        }
+
+        .kpi-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .kpi-card.green .kpi-bar {
+            background: var(--green);
+        }
+
+        .kpi-card.red .kpi-bar {
+            background: var(--red);
+        }
+
+        .kpi-card.amber .kpi-bar {
+            background: var(--amber);
+        }
+
+        .kpi-card.accent .kpi-bar {
+            background: var(--accent);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* STRATEGY PERFORMANCE                                         */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .strategy-row {
+            display: grid;
+            grid-template-columns: 90px 1fr 1fr 60px;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .strategy-row:last-child {
+            border-bottom: none;
+        }
+
+        .strategy-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink2);
+            white-space: nowrap;
+        }
+
+        .strategy-bars {
+            display: flex;
+            gap: 3px;
+            height: 20px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .strategy-bar {
+            flex: 1;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: slideIn 0.5s ease forwards;
+        }
+
+        .strategy-bar.win {
+            background: var(--green);
+        }
+
+        .strategy-bar.loss {
+            background: var(--red);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                width: 0;
+            }
+            to {
+                opacity: 1;
+                width: 100%;
+            }
+        }
+
+        .strategy-row:nth-child(1) .strategy-bar {
+            animation-delay: 80ms;
+        }
+
+        .strategy-row:nth-child(2) .strategy-bar {
+            animation-delay: 160ms;
+        }
+
+        .strategy-row:nth-child(3) .strategy-bar {
+            animation-delay: 240ms;
+        }
+
+        .strategy-row:nth-child(4) .strategy-bar {
+            animation-delay: 320ms;
+        }
+
+        .strategy-row:nth-child(5) .strategy-bar {
+            animation-delay: 400ms;
+        }
+
+        .strategy-row:nth-child(6) .strategy-bar {
+            animation-delay: 480ms;
+        }
+
+        .strategy-row:nth-child(7) .strategy-bar {
+            animation-delay: 560ms;
+        }
+
+        .strategy-wl {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ink3);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* EMOTION IMPACT                                               */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .emotion-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 70px;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .emotion-row:last-child {
+            border-bottom: none;
+        }
+
+        .emotion-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink2);
+        }
+
+        .emotion-bar {
+            height: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            animation: slideBarIn 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideBarIn {
+            from {
+                opacity: 0;
+                width: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .emotion-row:nth-child(1) .emotion-bar {
+            animation-delay: 100ms;
+        }
+
+        .emotion-row:nth-child(2) .emotion-bar {
+            animation-delay: 180ms;
+        }
+
+        .emotion-row:nth-child(3) .emotion-bar {
+            animation-delay: 260ms;
+        }
+
+        .emotion-row:nth-child(4) .emotion-bar {
+            animation-delay: 340ms;
+        }
+
+        .emotion-row:nth-child(5) .emotion-bar {
+            animation-delay: 420ms;
+        }
+
+        .emotion-bar-fill {
+            height: 100%;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .emotion-bar.positive .emotion-bar-fill {
+            background: linear-gradient(90deg, var(--green) 0%, #2d9966 100%);
+        }
+
+        .emotion-bar.negative .emotion-bar-fill {
+            background: linear-gradient(90deg, var(--red) 0%, #d6626d 100%);
+        }
+
+        .emotion-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: right;
+            color: var(--ink2);
+            white-space: nowrap;
+        }
+
+        .emotion-insight {
+            background: linear-gradient(135deg, rgba(35, 84, 230, 0.05) 0%, rgba(27, 122, 90, 0.05) 100%);
+            border: 0.5px solid rgba(35, 84, 230, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--ink2);
+            line-height: 1.5;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* PLAN ADHERENCE DONUT                                         */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .donut-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-canvas-wrapper {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .donut-center-text {
+            position: absolute;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .donut-center-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .donut-center-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--ink3);
+            letter-spacing: 0.08em;
+            margin-top: 2px;
+        }
+
+        .donut-legend {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+        }
+
+        .donut-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .donut-legend-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .donut-legend-box.followed {
+            background: var(--green);
+        }
+
+        .donut-legend-box.not-followed {
+            background: var(--amber);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* BEHAVIORAL CHALLENGES                                        */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .challenge-stat {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .challenge-stat:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .challenge-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink3);
+            margin-bottom: 8px;
+        }
+
+        .challenge-number {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 12px;
+        }
+
+        .challenge-bar {
+            height: 8px;
+            background: linear-gradient(90deg, var(--red) 0%, var(--amber) 100%);
+            border-radius: 4px;
+            margin-bottom: 8px;
+            animation: widthIn 0.6s ease forwards;
+            animation-delay: 200ms;
+            transform-origin: left;
+            opacity: 0;
+        }
+
+        @keyframes widthIn {
+            from {
+                opacity: 0;
+                transform: scaleX(0);
+            }
+            to {
+                opacity: 1;
+                transform: scaleX(1);
+            }
+        }
+
+        .challenge-note {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--ink3);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* MONTHLY P/L                                                  */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .monthly-row {
+            display: grid;
+            grid-template-columns: 65px 1fr 70px;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            position: relative;
+        }
+
+        .monthly-row:last-child {
+            border-bottom: none;
+        }
+
+        .monthly-month {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ink2);
+            white-space: nowrap;
+        }
+
+        .monthly-bar-container {
+            position: relative;
+            height: 24px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .monthly-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            animation: slideIn 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .monthly-bar.positive {
+            background: var(--green);
+        }
+
+        .monthly-bar.declining {
+            background: var(--amber);
+        }
+
+        .monthly-row:nth-child(1) .monthly-bar {
+            animation-delay: 150ms;
+        }
+
+        .monthly-row:nth-child(2) .monthly-bar {
+            animation-delay: 250ms;
+        }
+
+        .monthly-row:nth-child(3) .monthly-bar {
+            animation-delay: 350ms;
+        }
+
+        .monthly-bar-container:hover .monthly-bar {
+            opacity: 0.8;
+        }
+
+        .monthly-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: right;
+            color: var(--ink2);
+            white-space: nowrap;
+        }
+
+        .monthly-tooltip {
+            position: absolute;
+            bottom: -28px;
+            left: 0;
+            background: var(--ink);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+        }
+
+        .monthly-bar-container:hover .monthly-tooltip {
+            opacity: 1;
+        }
+
+        .monthly-decline-alert {
+            background: rgba(176, 106, 10, 0.08);
+            border: 0.5px solid rgba(176, 106, 10, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--amber);
+            font-weight: 500;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* MOST COMMON MISTAKES                                         */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .mistakes-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .mistake-item {
+            display: grid;
+            grid-template-columns: 130px 1fr 35px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mistake-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink2);
+        }
+
+        .mistake-track {
+            height: 8px;
+            background: rgba(194, 59, 59, 0.15);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .mistake-bar {
+            height: 100%;
+            background: var(--red);
+            opacity: 0.75;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            animation: slideIn 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .mistake-item:nth-child(1) .mistake-bar {
+            animation-delay: 100ms;
+        }
+
+        .mistake-item:nth-child(2) .mistake-bar {
+            animation-delay: 180ms;
+        }
+
+        .mistake-item:nth-child(3) .mistake-bar {
+            animation-delay: 260ms;
+        }
+
+        .mistake-item:nth-child(4) .mistake-bar {
+            animation-delay: 340ms;
+        }
+
+        .mistake-item:nth-child(5) .mistake-bar {
+            animation-delay: 420ms;
+        }
+
+        .mistake-item:nth-child(6) .mistake-bar {
+            animation-delay: 500ms;
+        }
+
+        .mistake-track:hover .mistake-bar {
+            opacity: 0.9;
+        }
+
+        .mistake-count {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: right;
+            color: var(--ink2);
+        }
+
+        .mistake-tooltip {
+            position: absolute;
+            bottom: -28px;
+            right: 0;
+            background: var(--ink);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 10;
+        }
+
+        .mistake-track:hover .mistake-tooltip {
+            opacity: 1;
+        }
+
+        @media (max-width: 519px) {
+            .mistakes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* INSIGHT TIP                                                  */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .insight-tip {
+            background: linear-gradient(135deg, rgba(35, 84, 230, 0.08) 0%, rgba(35, 84, 230, 0.04) 100%);
+            border: 0.5px solid rgba(35, 84, 230, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 28px;
+        }
+
+        .insight-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .insight-text {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--ink2);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* SECTION TITLES                                               */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 6px;
+        }
+
+        .section-subtitle {
+            font-size: 12px;
+            color: var(--ink3);
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <div class="breadcrumb">Performance</div>
+                <h1>Trading Insights</h1>
+                <div class="subtitle" id="headerSubtitle"></div>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-outline">← Dashboard</button>
+                <button class="btn btn-filled">Specific Insights ↗</button>
+            </div>
+        </div>
+
+        <!-- KPI GRID -->
+        <div class="row cols-4">
+            <!-- Plan Adherence -->
+            <div class="card kpi-card interactive green" data-metric="planAdherence">
+                <div class="section-label kpi-card-label">Plan Adherence Rate</div>
+                <div class="kpi-value" id="kpiAdherence">-</div>
+                <div class="sub-label" id="kpiAdherenceTotal">-</div>
+                <div class="kpi-bar" id="kpiAdherenceBar"></div>
+            </div>
+
+            <!-- Over Trading Incidents -->
+            <div class="card kpi-card interactive red" data-metric="overTrading">
+                <div class="section-label kpi-card-label">Over Trading Incidents</div>
+                <div class="kpi-value" id="kpiOverTrading">-</div>
+                <div class="sub-label">Position limit breaks</div>
+                <div class="kpi-bar" id="kpiOvertradingBar"></div>
+            </div>
+
+            <!-- Revenge Trades -->
+            <div class="card kpi-card interactive amber" data-metric="revengeTrades">
+                <div class="section-label kpi-card-label">Revenge Trades</div>
+                <div class="kpi-value" id="kpiRevengeTrades">-</div>
+                <div class="sub-label">Emotional responses</div>
+                <div class="kpi-bar" id="kpiRevengeTradesBar"></div>
+            </div>
+
+            <!-- Total Trades -->
+            <div class="card kpi-card interactive accent" data-metric="totalTrades">
+                <div class="section-label kpi-card-label">Total Trades</div>
+                <div class="kpi-value" id="kpiTotalTrades">-</div>
+                <div class="sub-label">This period</div>
+                <div class="kpi-bar" id="kpiTotalTradesBar"></div>
+            </div>
+        </div>
+
+        <!-- PERFORMANCE ANALYSIS SECTION -->
+        <div class="row cols-2">
+            <!-- Strategy Performance -->
+            <div class="card">
+                <div class="section-title">Strategy Performance</div>
+                <div class="section-subtitle">Win/loss distribution by approach</div>
+                <div id="strategyContainer"></div>
+            </div>
+
+            <!-- Emotion Impact -->
+            <div class="card">
+                <div class="section-title">Emotion Impact</div>
+                <div class="section-subtitle">Average P/L by emotional state</div>
+                <div id="emotionContainer"></div>
+                <div class="emotion-insight" id="emotionInsight"></div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS ROW (Adherence, Challenges, Monthly P/L) -->
+        <div class="row cols-3">
+            <!-- Plan Adherence Donut -->
+            <div class="card">
+                <div class="section-title">Plan Adherence</div>
+                <div class="section-subtitle">Trade compliance</div>
+                <div class="donut-container">
+                    <div class="donut-canvas-wrapper">
+                        <canvas id="donutChart" width="160" height="160"></canvas>
+                        <div class="donut-center-text">
+                            <div class="donut-center-value" id="donutValue">-</div>
+                            <div class="donut-center-label">followed</div>
+                        </div>
+                    </div>
+                    <div class="donut-legend">
+                        <div class="donut-legend-item">
+                            <div class="donut-legend-box followed"></div>
+                            <span>Followed</span>
+                        </div>
+                        <div class="donut-legend-item">
+                            <div class="donut-legend-box not-followed"></div>
+                            <span>Skipped</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Behavioral Challenges -->
+            <div class="card">
+                <div class="section-title">Behavioral Challenges</div>
+                <div class="section-subtitle">Incident tracking</div>
+                <div class="challenge-stat">
+                    <div class="challenge-label">Over Trading</div>
+                    <div class="challenge-number" id="challengeOT">-</div>
+                </div>
+                <div class="challenge-stat">
+                    <div class="challenge-label">Revenge Trading</div>
+                    <div class="challenge-number" id="challengeRT">-</div>
+                </div>
+                <div class="challenge-bar" id="challengeBar" style="width: 0;"></div>
+                <div class="challenge-note" id="challengeNote">- / - trades affected</div>
+            </div>
+
+            <!-- Monthly P/L -->
+            <div class="card">
+                <div class="section-title">Monthly P/L</div>
+                <div class="section-subtitle">Performance by month</div>
+                <div id="monthlyContainer"></div>
+                <div class="monthly-decline-alert" id="declineAlert" style="display: none;">
+                    📉 P/L declining across period
+                </div>
+            </div>
+        </div>
+
+        <!-- MOST COMMON MISTAKES -->
+        <div class="card" style="margin-bottom: 28px;">
+            <div class="section-title">Most Common Mistakes</div>
+            <div class="section-subtitle">Top errors by frequency</div>
+            <div class="mistakes-grid" id="mistakesContainer"></div>
+        </div>
+
+        <!-- INSIGHT TIP -->
+        <div class="insight-tip">
+            <div class="insight-label">💡 Key Insight</div>
+            <div class="insight-text" id="insightText">-</div>
+        </div>
+    </div>
+
+    <script>
+        /* ═══════════════════════════════════════════════════════════ */
+        /* CONFIGURATION & DATA MODEL                                   */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        const CONFIG = {
+            meta: {
+                title: "Trading Insights",
+                subtitle: "104 trades · Nov 2025 – Jan 2026",
+                totalTrades: 104,
+                dateRange: "Nov 2025 – Jan 2026"
+            },
+
+            kpis: {
+                planAdherence: { followed: 75, total: 104 },   // % = followed/total
+                overTrading: 26,
+                revengeTrades: 22
+            },
+
+            strategies: [
+                { name: "Bollinger",    wins: 3, losses: 1 },
+                { name: "Day Trading",  wins: 4, losses: 3 },
+                { name: "Mean Rev.",    wins: 5, losses: 2 },
+                { name: "Moving Avg",   wins: 3, losses: 3 },
+                { name: "Scalping",     wins: 9, losses: 3 },
+                { name: "Swing",        wins: 5, losses: 6 },
+                { name: "Other",        wins: 2, losses: 1 }
+            ],
+
+            emotions: [
+                { state: "Calm",      avgPL: 290  },
+                { state: "Confident", avgPL: 140  },
+                { state: "FOMO",      avgPL: 310  },
+                { state: "Fear",      avgPL: -190 },
+                { state: "Greed",     avgPL: -360 }
+            ],
+
+            monthlyPL: [
+                { month: "2025-11", pl: 3850 },
+                { month: "2025-12", pl: 3520 },
+                { month: "2026-01", pl: 2870 }
+            ],
+
+            mistakes: [
+                { label: "FOMO trade",          count: 6 },
+                { label: "Over-leveraged",      count: 4 },
+                { label: "Emotional decision",  count: 3 },
+                { label: "Poor entry timing",   count: 3 },
+                { label: "Ignored stop loss",   count: 2 },
+                { label: "Took profit early",   count: 2 }
+            ]
+        };
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* UTILITY FUNCTIONS                                            */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        function getMaxValue(array, key) {
+            return Math.max(...array.map(item => Math.abs(item[key])));
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        function formatPercentage(value) {
+            return Math.round(value * 100) + '%';
+        }
+
+        function formatMonthDisplay(monthStr) {
+            const [year, month] = monthStr.split('-');
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return monthNames[parseInt(month) - 1] + " '" + year.slice(2);
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* RENDER FUNCTIONS                                             */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        function renderHeader() {
+            document.getElementById('headerSubtitle').textContent = CONFIG.meta.subtitle;
+        }
+
+        function renderKPIs() {
+            const { planAdherence, overTrading, revengeTrades } = CONFIG.kpis;
+            const { totalTrades } = CONFIG.meta;
+
+            // Plan Adherence
+            const adherenceRate = planAdherence.followed / planAdherence.total;
+            document.getElementById('kpiAdherence').textContent = formatPercentage(adherenceRate);
+            document.getElementById('kpiAdherenceTotal').textContent = `${planAdherence.followed} / ${planAdherence.total} trades`;
+            document.getElementById('kpiAdherenceBar').style.width = (adherenceRate * 100) + '%';
+
+            // Over Trading
+            const overtradingRate = overTrading / totalTrades;
+            document.getElementById('kpiOverTrading').textContent = overTrading;
+            document.getElementById('kpiOvertradingBar').style.width = (overtradingRate * 100) + '%';
+
+            // Revenge Trades
+            const revengeRate = revengeTrades / totalTrades;
+            document.getElementById('kpiRevengeTrades').textContent = revengeTrades;
+            document.getElementById('kpiRevengeTradesBar').style.width = (revengeRate * 100) + '%';
+
+            // Total Trades
+            document.getElementById('kpiTotalTrades').textContent = totalTrades;
+            document.getElementById('kpiTotalTradesBar').style.width = '100%';
+        }
+
+        function renderStrategies() {
+            const container = document.getElementById('strategyContainer');
+            const maxTradeCount = Math.max(...CONFIG.strategies.map(s => s.wins + s.losses));
+
+            let html = '';
+            CONFIG.strategies.forEach(strategy => {
+                const total = strategy.wins + strategy.losses;
+                const winPercent = (strategy.wins / total) * 100;
+                const lossPercent = 100 - winPercent;
+                const scale = total / maxTradeCount;
+
+                html += `
+                    <div class="strategy-row">
+                        <div class="strategy-name">${strategy.name}</div>
+                        <div class="strategy-bars">
+                            <div class="strategy-bar win" style="flex: ${strategy.wins * scale}; min-width: 1px;"></div>
+                            <div class="strategy-bar loss" style="flex: ${strategy.losses * scale}; min-width: 1px;"></div>
+                        </div>
+                        <div class="strategy-wl">${strategy.wins}W ${strategy.losses}L</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderEmotions() {
+            const container = document.getElementById('emotionContainer');
+            const maxAbsValue = Math.max(...CONFIG.emotions.map(e => Math.abs(e.avgPL)));
+
+            let html = '';
+            CONFIG.emotions.forEach(emotion => {
+                const percentage = (Math.abs(emotion.avgPL) / maxAbsValue) * 100;
+                const isPositive = emotion.avgPL >= 0;
+                const cls = isPositive ? 'positive' : 'negative';
+                const value = formatCurrency(emotion.avgPL);
+
+                html += `
+                    <div class="emotion-row">
+                        <div class="emotion-label">${emotion.state}</div>
+                        <div class="emotion-bar ${cls}">
+                            <div class="emotion-bar-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="emotion-value">${value}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+
+            // Render emotion insight
+            const mostCostly = CONFIG.emotions.reduce((min, curr) => 
+                curr.avgPL < min.avgPL ? curr : min
+            );
+            const mostProfitable = CONFIG.emotions.reduce((max, curr) => 
+                curr.avgPL > max.avgPL ? curr : max
+            );
+
+            const insightHtml = `<strong>${mostCostly.state}</strong> costs the most (${formatCurrency(mostCostly.avgPL)}), while <strong>${mostProfitable.state}</strong> is most profitable (${formatCurrency(mostProfitable.avgPL)}).`;
+            document.getElementById('emotionInsight').innerHTML = insightHtml;
+        }
+
+        function drawDonutChart() {
+            const canvas = document.getElementById('donutChart');
+            const ctx = canvas.getContext('2d');
+            const { followed, total } = CONFIG.kpis.planAdherence;
+            const notFollowed = total - followed;
+
+            // Calculate percentages
+            const followedPercent = followed / total;
+            const notFollowedPercent = notFollowed / total;
+
+            // Canvas sizing
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const outerRadius = 70;
+            const innerRadius = 45;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw donut segments
+            function drawSegment(startAngle, endAngle, color) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, outerRadius, startAngle, endAngle);
+                ctx.arc(centerX, centerY, innerRadius, endAngle, startAngle, true);
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+
+            const startAngle = -Math.PI / 2;
+            const followedEndAngle = startAngle + (followedPercent * 2 * Math.PI);
+            const notFollowedEndAngle = followedEndAngle + (notFollowedPercent * 2 * Math.PI);
+
+            drawSegment(startAngle, followedEndAngle, '#1b7a5a');
+            drawSegment(followedEndAngle, notFollowedEndAngle, '#b06a0a');
+
+            // Update center text
+            document.getElementById('donutValue').textContent = formatPercentage(followedPercent);
+        }
+
+        function renderChallenges() {
+            const { overTrading, revengeTrades } = CONFIG.kpis;
+            const { totalTrades } = CONFIG.meta;
+            const affected = overTrading + revengeTrades;
+            const affectedRate = affected / totalTrades;
+
+            document.getElementById('challengeOT').textContent = overTrading;
+            document.getElementById('challengeRT').textContent = revengeTrades;
+            document.getElementById('challengeBar').style.width = (affectedRate * 100) + '%';
+            document.getElementById('challengeNote').textContent = `${affected} / ${totalTrades} trades affected`;
+        }
+
+        function renderMonthlyPL() {
+            const container = document.getElementById('monthlyContainer');
+            const maxAbsValue = Math.max(...CONFIG.monthlyPL.map(m => Math.abs(m.pl)));
+
+            let html = '';
+            CONFIG.monthlyPL.forEach((item, index) => {
+                const prevValue = index > 0 ? CONFIG.monthlyPL[index - 1].pl : item.pl;
+                const isDeclining = item.pl < prevValue && index > 0;
+                const barClass = isDeclining ? 'declining' : 'positive';
+                const percentage = (item.pl / maxAbsValue) * 100;
+
+                html += `
+                    <div class="monthly-row">
+                        <div class="monthly-month">${formatMonthDisplay(item.month)}</div>
+                        <div class="monthly-bar-container">
+                            <div class="monthly-bar ${barClass}" style="width: ${percentage}%"></div>
+                            <div class="monthly-tooltip">${formatCurrency(item.pl)}</div>
+                        </div>
+                        <div class="monthly-value">${formatCurrency(item.pl)}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+
+            // Check if declining trend
+            const isDecining = CONFIG.monthlyPL[CONFIG.monthlyPL.length - 1].pl < CONFIG.monthlyPL[0].pl;
+            document.getElementById('declineAlert').style.display = isDecining ? 'block' : 'none';
+        }
+
+        function renderMistakes() {
+            const container = document.getElementById('mistakesContainer');
+            const maxCount = Math.max(...CONFIG.mistakes.map(m => m.count));
+
+            let html = '';
+            CONFIG.mistakes.forEach(mistake => {
+                const percentage = (mistake.count / maxCount) * 100;
+
+                html += `
+                    <div class="mistake-item">
+                        <div class="mistake-label">${mistake.label}</div>
+                        <div class="mistake-track">
+                            <div class="mistake-bar" style="width: ${percentage}%"></div>
+                            <div class="mistake-tooltip">${mistake.count}</div>
+                        </div>
+                        <div class="mistake-count">${mistake.count}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function generateInsight() {
+            // Find best strategy
+            const bestStrategy = CONFIG.strategies.reduce((best, current) => {
+                const currentWinRate = current.wins / (current.wins + current.losses);
+                const bestWinRate = best.wins / (best.wins + best.losses);
+                return currentWinRate > bestWinRate ? current : best;
+            });
+
+            // Find most costly emotion
+            const mostCostlyEmotion = CONFIG.emotions.reduce((min, curr) => 
+                curr.avgPL < min.avgPL ? curr : min
+            );
+
+            // Calculate behavioral incident rate
+            const behavioralIncidents = CONFIG.kpis.overTrading + CONFIG.kpis.revengeTrades;
+            const incidentRate = (behavioralIncidents / CONFIG.meta.totalTrades) * 100;
+
+            // Compose insight
+            const bestWinRate = ((bestStrategy.wins / (bestStrategy.wins + bestStrategy.losses)) * 100).toFixed(0);
+            const insight = `Your strongest strategy is <strong>${bestStrategy.name}</strong> with a ${bestWinRate}% win rate. However, <strong>${mostCostlyEmotion.state}</strong> trades are costing you an average of ${formatCurrency(mostCostlyEmotion.avgPL)} per trade. Focus on managing emotions to improve overall profitability.`;
+            
+            document.getElementById('insightText').innerHTML = insight;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* INTERACTIVITY                                                */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        function initInteractivity() {
+            // KPI Card clicks
+            document.querySelectorAll('.kpi-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    const metric = card.dataset.metric;
+                    console.log(`KPI Selected: ${metric}`);
+                });
+            });
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* INITIALIZATION                                               */
+        /* ═══════════════════════════════════════════════════════════ */
+
+        function init() {
+            renderHeader();
+            renderKPIs();
+            renderStrategies();
+            renderEmotions();
+            drawDonutChart();
+            renderChallenges();
+            renderMonthlyPL();
+            renderMistakes();
+            generateInsight();
+            initInteractivity();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

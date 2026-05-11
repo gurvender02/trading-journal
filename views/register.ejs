@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Trading Journal</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+    <div class="auth-container">
+        <div style="position: absolute; top: 20px; right: 20px;">
+            <div class="theme-toggle-wrap">
+                <span class="theme-label" id="themeLabel">DARK</span>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+                    <div class="theme-thumb" id="themeThumb"></div>
+                </button>
+            </div>
+        </div>
+
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-brand">
+                    <div class="auth-brand-dot"></div>
+                    Trading Journal
+                </div>
+                <h2 class="auth-title">Create Account</h2>
+                <p class="auth-subtitle">Join the professional trading community</p>
+            </div>
+
+            <% if (error) { %>
+                <div class="alert alert-danger">
+                    <%= error %>
+                </div>
+            <% } %>
+
+            <form method="POST" class="auth-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" placeholder="Choose your username" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Your email address" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="At least 6 characters" required />
+                </div>
+
+                <button type="submit" class="btn btn-primary"><i data-lucide="user-plus"></i> Create Account</button>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account? <a href="/login">Sign in here</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            var isLight = document.body.classList.toggle('light-mode');
+            document.getElementById('themeLabel').textContent = isLight ? 'LIGHT' : 'DARK';
+            localStorage.setItem('tj-theme', isLight ? 'light' : 'dark');
+        }
+        
+        (function() {
+            if (localStorage.getItem('tj-theme') === 'light') {
+                document.body.classList.add('light-mode');
+                var lbl = document.getElementById('themeLabel');
+                if (lbl) lbl.textContent = 'LIGHT';
+            }
+        })();
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>

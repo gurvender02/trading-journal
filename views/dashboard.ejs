@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Trading Journal</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav>
+        <div class="brand">
+            <div class="brand-dot"></div>
+            TRADING JOURNAL
+        </div>
+        <ul>
+            <li><a href="/dashboard" class="active">Dashboard</a></li>
+            <li><a href="/add-trade">Add Trade</a></li>
+            <li><a href="/trades">My Trades</a></li>
+            <li><a href="/insights">Insights</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li style="margin-left: auto;">
+                <div class="theme-toggle-wrap">
+                    <span class="theme-label" id="themeLabel">DARK</span>
+                    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+                        <div class="theme-thumb" id="themeThumb"></div>
+                    </button>
+                </div>
+            </li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <div class="container">
+            <% if (error) { %>
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> <%= error %>
+                </div>
+            <% } %>
+
+            <!-- STATS GRID -->
+            <div class="stats-grid">
+                <div class="stat stat-card stat--<%= parseFloat(totalPL) >= 0 ? 'green' : 'red' %>">
+                    <div class="stat-label">Total P&L</div>
+                    <div class="stat-value" id="stat-pl">$<%= parseFloat(totalPL).toFixed(2) %></div>
+                </div>
+                <div class="stat stat-card stat--blue">
+                    <div class="stat-label">Total Trades</div>
+                    <div class="stat-value" id="stat-trades"><%= totalTrades %></div>
+                </div>
+                <div class="stat stat-card stat--green">
+                    <div class="stat-label">Winning Trades</div>
+                    <div class="stat-value" id="stat-wins"><%= wins %></div>
+                </div>
+                <div class="stat stat-card stat--red">
+                    <div class="stat-label">Losing Trades</div>
+                    <div class="stat-value" id="stat-losses"><%= losses %></div>
+                </div>
+                <div class="stat stat-card stat--gold">
+                    <div class="stat-label">Win Rate</div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="stat-value" id="stat-winrate" style="margin: 0;"><%= winRate %>%</div>
+                        <svg class="winrate-ring-svg" width="44" height="44" viewBox="0 0 44 44" style="transform:rotate(-90deg);">
+                            <circle cx="22" cy="22" r="14" fill="none" stroke="var(--border)" stroke-width="3"/>
+                            <circle cx="22" cy="22" r="14" fill="none" stroke="var(--gold)" stroke-width="3"
+                                stroke-dasharray="<%= (2 * Math.PI * 14).toFixed(2) %>"
+                                stroke-dashoffset="<%= (2 * Math.PI * 14).toFixed(2) %>"
+                                stroke-linecap="round" id="winrate-ring"
+                                style="transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1);"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="btn-group">
+                <a href="/add-trade" class="btn btn-primary"><i data-lucide="plus-circle"></i> Add New Trade</a>
+                <a href="/trades" class="btn btn-ghost"><i data-lucide="list"></i> View All Trades</a>
+                <a href="/insights" class="btn btn-ghost"><i data-lucide="trending-up"></i> View Insights</a>
+                <a href="/profile" class="btn btn-ghost"><i data-lucide="user"></i> My Profile</a>
+            </div>
+
+            <!-- TWO-COLUMN LAYOUT -->
+            <div class="content-grid">
+                <!-- LEFT: RECENT TRADES -->
+                <div class="content-section">
+                    <div class="section-with-label">
+                        <div class="section-label"><i data-lucide="list"></i> Recent Activity</div>
+                        <div id="recentTradesContainer">
+                            <!-- Recent trades will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: GOALS + RULES STACKED -->
+                <div class="content-section">
+                    <!-- GOALS SECTION -->
+                    <div id="goalsSection" style="display: none;">
+                        <div class="section-with-label">
+                            <div class="section-label"><i data-lucide="target"></i> Trading Goals</div>
+                            <div id="goalsProgressContainer">
+                                <!-- Goals loaded via JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RULES SECTION -->
+                    <div id="rulesSection" style="display: none;">
+                        <div class="section-with-label">
+                            <div class="section-label"><i data-lucide="shield-check"></i> Active Rules</div>
+                            <div id="rulesContainer">
+                                <!-- Rules loaded via JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>Keep trading, keep improving</p>
+    </footer>
+
+    <script>
+        // ===== THEME TOGGLE =====
+        function toggleTheme() {
+            var isLight = document.body.classList.toggle('light-mode');
+            document.getElementById('themeLabel').textContent = isLight ? 'LIGHT' : 'DARK';
+            localStorage.setItem('tj-theme', isLight ? 'light' : 'dark');
+        }
+        
+        (function() {
+            if (localStorage.getItem('tj-theme') === 'light') {
+                document.body.classList.add('light-mode');
+                var lbl = document.getElementById('themeLabel');
+                if (lbl) lbl.textContent = 'LIGHT';
+            }
+        })();
+
+        // ===== ANIMATED COUNTERS =====
+        function animateCounter(el, target, prefix, suffix, duration) {
+            if (!el) return;
+            var start = performance.now();
+            var startVal = 0;
+            function step(now) {
+                var elapsed = now - start;
+                var progress = Math.min(elapsed / duration, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                var val = Math.round(startVal + (target - startVal) * eased);
+                el.textContent = prefix + val.toLocaleString() + suffix;
+                if (progress < 1) requestAnimationFrame(step);
+                else el.textContent = prefix + target.toLocaleString() + suffix;
+            }
+            requestAnimationFrame(step);
+        }
+
+        window.addEventListener('DOMContentLoaded', function () {
+            setTimeout(function() {
+                animateCounter(document.getElementById('stat-pl'), parseFloat(<%= totalPL %>), '+$', '', 1200);
+                animateCounter(document.getElementById('stat-trades'), parseInt(<%= totalTrades %>), '', '', 900);
+                animateCounter(document.getElementById('stat-wins'), parseInt(<%= wins %>), '', '', 900);
+                animateCounter(document.getElementById('stat-losses'), parseInt(<%= losses %>), '', '', 900);
+                animateCounter(document.getElementById('stat-winrate'), parseFloat(<%= winRate %>), '', '%', 1000);
+
+                // Win rate ring animation
+                var ring = document.getElementById('winrate-ring');
+                if (ring) {
+                    var pct = parseFloat(<%= winRate %>) / 100;
+                    var circ = 2 * Math.PI * 14;
+                    setTimeout(function() {
+                        ring.style.strokeDashoffset = (circ * (1 - pct)).toFixed(2);
+                    }, 200);
+                }
+            }, 150);
+            
+            loadGoalsProgress();
+            loadActiveRules();
+            lucide.createIcons();
+        });
+
+        // Load goals progress on dashboard
+        async function loadGoalsProgress() {
+            try {
+                const response = await fetch('/goals/progress');
+                const data = await response.json();
+                
+                if (data.goals && data.goals.length > 0) {
+                    renderGoalsProgress(data.goals);
+                }
+            } catch (error) {
+                console.error('Error loading goals:', error);
+            }
+        }
+
+        function renderGoalsProgress(goals) {
+            const section = document.getElementById('goalsSection');
+            const container = document.getElementById('goalsProgressContainer');
+            
+            container.innerHTML = goals.map(goal => {
+                const remaining = Math.max(0, goal.targetProfit - goal.currentProgress);
+                const fillPercent = Math.min(100, (goal.currentProgress / goal.targetProfit) * 100);
+                
+                return `
+                    <div class="goal-card">
+                        <div class="goal-header">
+                            <div class="goal-title">${escapeHtml(goal.type)}</div>
+                            <div class="goal-type">${goal.progressPercentage}%</div>
+                        </div>
+                        
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: ${fillPercent}%;"></div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 8px;">
+                            <span>$${goal.currentProgress.toFixed(2)}</span>
+                            <span>$${goal.targetProfit.toFixed(2)}</span>
+                        </div>
+                        
+                        ${remaining > 0 ? `
+                            <div class="goal-description">
+                                $${remaining.toFixed(2)} remaining
+                            </div>
+                        ` : `
+                            <div style="color: var(--green); font-weight: 600; font-size: 12px; margin-top: 8px;">
+                                Goal achieved!
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
+            
+            section.style.display = 'block';
+        }
+
+        // Load active rules on dashboard
+        async function loadActiveRules() {
+            try {
+                const response = await fetch('/profile/rules');
+                const data = await response.json();
+                const activeRules = (data.rules || []).filter(r => r.active);
+                
+                if (activeRules.length > 0) {
+                    renderActiveRules(activeRules);
+                }
+            } catch (error) {
+                console.error('Error loading rules:', error);
+            }
+        }
+
+        function renderActiveRules(rules) {
+            const section = document.getElementById('rulesSection');
+            const container = document.getElementById('rulesContainer');
+            
+            const categoryMap = {
+                'Risk': 'risk',
+                'Psychology': 'psychology',
+                'Default': 'default'
+            };
+            
+            container.innerHTML = rules.map(rule => `
+                <div class="rule-row">
+                    <div class="rule-item-left">
+                        <div class="rule-dot ${categoryMap[rule.category] || 'default'}"></div>
+                        <div class="rule-text">${escapeHtml(rule.text)}</div>
+                    </div>
+                    <span class="tag-${categoryMap[rule.category] === 'risk' ? 'risk' : categoryMap[rule.category] === 'psychology' ? 'psych' : 'risk'}">
+                        ${rule.category}
+                    </span>
+                </div>
+            `).join('');
+            
+            section.style.display = 'block';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Refresh every 30 seconds
+        setInterval(() => {
+            loadGoalsProgress();
+        }, 30000);
+    </script>
+</body>
+</html>
+    </script>
+</body>
+</html>
+
+    <script>
+        // Load goals progress on dashboard
+        async function loadGoalsProgress() {
+            try {
+                const response = await fetch('/goals/progress');
+                const data = await response.json();
+                
+                if (data.goals && data.goals.length > 0) {
+                    renderGoalsProgress(data.goals);
+                }
+            } catch (error) {
+                console.error('Error loading goals:', error);
+            }
+        }
+
+        function renderGoalsProgress(goals) {
+            const section = document.getElementById('goalsSection');
+            const container = document.getElementById('goalsProgressContainer');
+            
+            container.innerHTML = goals.map(goal => {
+                const remaining = Math.max(0, goal.targetProfit - goal.currentProgress);
+                const fillPercent = Math.min(100, (goal.currentProgress / goal.targetProfit) * 100);
+                
+                return `
+                    <div class="goal-card">
+                        <div class="goal-card-header">
+                            <div class="goal-type">${goal.type} Goal</div>
+                            <div class="progress-badge">${goal.progressPercentage}%</div>
+                        </div>
+                        
+                        <div class="progress" style="margin: 12px 0;">
+                            <div class="progress-fill" style="width: ${fillPercent}%;"></div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+                            <span>$${goal.currentProgress.toFixed(2)}</span>
+                            <span>$${goal.targetProfit.toFixed(2)}</span>
+                        </div>
+                        
+                        ${remaining > 0 ? `
+                            <div class="goal-description">
+                                💡 $${remaining.toFixed(2)} remaining to reach goal
+                            </div>
+                        ` : `
+                            <div style="color: var(--accent-green); font-weight: 600; font-size: 13px;">
+                                ✅ Goal achieved! Excellent work
+                            </div>
+                        `}
+                        
+                        ${goal.note ? `<div class="goal-description">📝 "${goal.note}"</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            section.style.display = 'block';
+        }
+
+        // Load active rules on dashboard
+        async function loadActiveRules() {
+            try {
+                const response = await fetch('/profile/rules');
+                const data = await response.json();
+                const activeRules = (data.rules || []).filter(r => r.active);
+                
+                if (activeRules.length > 0) {
+                    renderActiveRules(activeRules);
+                }
+            } catch (error) {
+                console.error('Error loading rules:', error);
+            }
+        }
+
+        function renderActiveRules(rules) {
+            const section = document.getElementById('rulesSection');
+            const container = document.getElementById('rulesContainer');
+            
+            const categoryColors = {
+                'risk': 'risk',
+                'psychology': 'psychology',
+                'strategy': 'strategy'
+            };
+            
+            container.innerHTML = rules.map(rule => `
+                <div class="rule-row">
+                    <div class="rule-item">
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                            ${rule.category ? `<span class="rule-badge ${categoryColors[rule.category.toLowerCase()] || 'strategy'}">${rule.category}</span>` : ''}
+                            <span class="rule-text">✓ ${escapeHtml(rule.text)}</span>
+                        </div>
+                        <a href="/profile" class="rule-action">Edit →</a>
+                    </div>
+                </div>
+            `).join('');
+            
+            section.style.display = 'block';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGoalsProgress();
+            loadActiveRules();
+        });
+
+        // Refresh every 30 seconds
+        setInterval(() => {
+            loadGoalsProgress();
+        }, 30000);
+    </script>
+</body>
+</html>
