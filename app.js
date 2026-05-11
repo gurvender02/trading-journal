@@ -1,3 +1,4 @@
+require('dotenv').config();
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -18,7 +19,8 @@ var profileRouter = require('./routes/profile');
 var goalsRouter = require('./routes/goals');
 
 
-mongoose.connect("mongodb://127.0.0.1:27017/trading-journal-db")
+// mongoose.connect("mongodb://127.0.0.1:27017/trading-journal-db")
+mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("MongoDB Connected"))
 .catch(err => console.log(err));
 
@@ -27,7 +29,7 @@ var app = express();
 
 
 app.use(session({
-  secret: "tradingjournal_secret",
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false
 }));
